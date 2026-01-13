@@ -1,4 +1,20 @@
 const path = require("path");
+const fs = require("fs");
+
+// Use Render-safe writable DB path
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, "data", "zigaswift.sqlite");
+
+// If DB_PATH is a folder path, ensure its directory exists
+const dbDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dbDir)) {
+fs.mkdirSync(dbDir, { recursive: true });
+}
+
+console.log("Using DB_PATH:", DB_PATH);
+
+// then open sqlite using DB_PATH
+// Example:
+// const db = new sqlite3.Database(DB_PATH);
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
