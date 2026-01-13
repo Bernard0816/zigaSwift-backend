@@ -9,44 +9,80 @@ const { z } = require("zod");
 const sqlite3 = require("sqlite3").verbose();
 const nodemailer = require("nodemailer");
 
-const app = express();
-
-app.set("trust proxy", 1);
-const corsOptions = {
-origin: [
-"https://bernard0816.github.io",
-"https://bernard0816.github.io/zigaswift",
-"https://bernard0816.github.io/zigaswift/",
-"https://zigaswift-backend.onrender.com"
-],
-methods: ["GET", "POST", "OPTIONS"],
-allowedHeaders: ["Content-Type"],
-optionsSuccessStatus: 204, 
-};
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // ✅ preflight uses same rules
-
 // =====================
 // Config
 // =====================
 const PORT = process.env.PORT || 3000;
 
-// Frontend URL (GitHub Pages) — set this on Render as SITE_URL
-const SITE_URL = process.env.SITE_URL || `http://localhost:${PORT}`;
+// IMPORTANT:
+// On Render, set SITE_URL to your FRONTEND (GitHub Pages) URL, e.g.
+// https://bernard0816.github.io/zigaswift/
+const SITE_URL = process.env.SITE_URL || "http://localhost:5500";
 
-// DB path (Render-safe). On Render, best is /tmp because it’s writable.
-// NOTE: SQLite on Render Free is NOT persistent (it resets on redeploy).
+// Render writable DB path (free instances reset on redeploy)
 const DEFAULT_DB_PATH = path.join("/tmp", "zigaswift.sqlite");
 const DB_PATH = process.env.DB_PATH || DEFAULT_DB_PATH;
 
 // Ensure DB directory exists
 const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-fs.mkdirSync(dbDir, { recursive: true });
-}
+if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+
 console.log("Using DB_PATH:", DB_PATH);
-console.log("SITE_URL:", SITE_URL);
+console.log("SITE_URL (frontend):", SITE_URL);
+
+// =====================
+// App
+// =====================
+const app = express();
+
+// ✅ Fix for Render / proxies (must be BEFORE rateLimit)
+app.set("trust proxy", 1);
+
+app.use(helmet());
+app.use(express.json({ limit: "200kb" }));
+
+// =====================
+// CORS (one clean setup)
+// =====================
+const allowedOrigins = [
+"http://localhost:5500",
+"http://localhost:3000",
+"http://127.0.0.1:5500",
+"http://127.0.0.1:3000",
+"https://bernard0816.github.io",
+"https://bernard0816.github.io/zigaswift",
+"https://bernard0816.github.io/zigaswift/",
+SITE_URL,
+].filter(Boolean);
+
+const corsOptions = {
+origin: function (origin, callback) {
+// allow requests with no origin (curl/postman)
+if (!origin) return callback(null, true);
+if (allowedOrigins.includes(origin)) return callback(null, true);
+return callback(new Error("Not allowed by CORS: " + origin));
+},
+methods: ["GET", "POST", "OPTIONS"],
+allowedHeaders: ["Content-Type"],
+optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // preflight
+
+// =====================
+// Rate limit
+// =====================
+const limiter = rateLimit({
+windowMs: 15 * 60 * 1000,
+limit: 100,
+standardHeaders: true,
+legacyHeaders: false,
+});
+app.use(limiter);
+
+// Optional static folder
+app.use(express.static(path.join(__dirname, "public")));
 
 // =====================
 // DB
@@ -86,7 +122,7 @@ const port = Number(process.env.SMTP_PORT || 587);
 
 const from = process.env.MAIL_FROM || "ZigaSwift <no-reply@zigaswift.com>";
 
-// If SMTP not configured, we silently skip email sending
+// If SMTP not configured, skip email sending safely
 if (!host || !user || !pass) return { transport: null, from };
 
 const transport = nodemailer.createTransport({
@@ -103,12 +139,15 @@ const { transport, from } = makeTransport();
 
 async function sendMail(to, subject, html) {
 if (!transport) {
-console.log("SMTP not set — skipping email to:", to);
+console.log("SMTP not set - skipping email to:", to);
 return;
 }
 await transport.sendMail({ from, to, subject, html });
 }
 
+// =====================
+// Helpers
+// =====================
 function nowISO() {
 return new Date().toISOString();
 }
@@ -121,55 +160,6 @@ return String(str)
 .replaceAll('"', "&quot;")
 .replaceAll("'", "&#039;");
 }
-
-// =====================
-// App
-// =====================
-const app = express();
-
-app.use(helmet());
-
-// ✅ CORS FIX (GitHub Pages → Render)
-// Put your GitHub Pages site here (and localhost for dev).
-const allowedOrigins = [
-"http://localhost:5500",
-"http://localhost:3000",
-"http://127.0.0.1:5500",
-"http://127.0.0.1:3000",
-"https://bernard0816.github.io", // your GitHub Pages domain
-SITE_URL, // the one you set on Render
-].filter(Boolean);
-
-app.use(
-cors({
-origin: function (origin, callback) {
-// allow requests with no origin (like curl/postman)
-if (!origin) return callback(null, true);
-
-if (allowedOrigins.includes(origin)) return callback(null, true);
-
-return callback(new Error("Not allowed by CORS: " + origin));
-},
-methods: ["GET", "POST", "OPTIONS"],
-allowedHeaders: ["Content-Type"],
-})
-);
-
-// ✅ Preflight handler (this kills many 405 issues)
-app.options("*", cors());
-
-app.use(express.json({ limit: "200kb" }));
-
-const limiter = rateLimit({
-windowMs: 15 * 60 * 1000,
-limit: 100,
-standardHeaders: true,
-legacyHeaders: false,
-});
-app.use(limiter);
-
-// If you have a /public folder in backend, this will serve it:
-app.use(express.static(path.join(__dirname, "public")));
 
 // =====================
 // Validation
@@ -222,10 +212,11 @@ resolve({ id: this.lastID });
 // Health
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
-// ✅ Helpful GET routes so typing in browser doesn’t confuse you
+// Helpful GET routes
 app.get("/api/waitlist", (req, res) => {
 res.status(200).send("OK (Use POST /api/waitlist to submit)");
 });
+
 app.get("/api/courier", (req, res) => {
 res.status(200).send("OK (Use POST /api/courier to submit)");
 });
@@ -242,8 +233,8 @@ parsed.email,
 `
 <div style="font-family:Arial,sans-serif;line-height:1.5">
 <h2>Welcome, ${escapeHtml(parsed.name)}!</h2>
-<p>You’re officially on the waitlist for <b>${escapeHtml(parsed.hub)}</b>.</p>
-<p>We’ll email you when ZigaSwift opens in your area and when early access is available.</p>
+<p>You're officially on the waitlist for <b>${escapeHtml(parsed.hub)}</b>.</p>
+<p>We'll email you when ZigaSwift opens in your area and when early access is available.</p>
 <p style="margin-top:18px">— ZigaSwift Team</p>
 <hr/>
 <small>You received this because you signed up at ${escapeHtml(SITE_URL)}.</small>
@@ -265,13 +256,13 @@ const result = await insertCourier(parsed);
 
 await sendMail(
 parsed.email,
-"ZigaSwift Courier Application Received 📨",
+"ZigaSwift Courier Application Received 📦",
 `
 <div style="font-family:Arial,sans-serif;line-height:1.5">
 <h2>Thanks, ${escapeHtml(parsed.name)}!</h2>
 <p>We received your courier application.</p>
 <p><b>Typical route:</b> ${escapeHtml(parsed.route)}</p>
-<p>Next steps: we’ll follow up with verification requirements and onboarding.</p>
+<p>Next steps: we'll follow up with verification requirements and onboarding.</p>
 <p style="margin-top:18px">— ZigaSwift Team</p>
 <hr/>
 <small>You received this because you applied at ${escapeHtml(SITE_URL)}.</small>
@@ -292,6 +283,9 @@ if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
 return res.status(404).send("Not Found");
 });
 
+// =====================
+// Start
+// =====================
 app.listen(PORT, () => {
 console.log(`ZigaSwift backend running on ${SITE_URL} (PORT ${PORT})`);
 });
