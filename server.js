@@ -9,6 +9,23 @@ const { z } = require("zod");
 const sqlite3 = require("sqlite3").verbose();
 const nodemailer = require("nodemailer");
 
+const app = express();
+
+const corsOptions = {
+origin: [
+"https://bernard0816.github.io",
+"https://bernard0816.github.io/zigaswift",
+"https://bernard0816.github.io/zigaswift/",
+"https://zigaswift-backend.onrender.com"
+],
+methods: ["GET", "POST", "OPTIONS"],
+allowedHeaders: ["Content-Type"],
+optionsSuccessStatus: 204, 
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ preflight uses same rules
+
 // =====================
 // Config
 // =====================
