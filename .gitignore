@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# env files
+.env
+.env.*
+
+# logs
+*.log
+
+# sqlite db files
+data/*.db
+*.db
+
+# OS junk
+.DS_Store
+Thumbs.db

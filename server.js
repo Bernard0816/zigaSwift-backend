@@ -47,8 +47,21 @@ max: 100,
 app.use(limiter);
 
 // 🗄️ DATABASE
-const dbPath = process.env.DB_PATH || "/tmp/zigaswift.sqlite";
-const db = new sqlite3.Database(dbPath);
+const dbPath = path.join(__dirname, "data", "zigaswift.db");
+
+// Ensure data folder exists
+if (!fs.existsSync(path.join(__dirname, "data"))) {
+fs.mkdirSync(path.join(__dirname, "data"));
+}
+
+// Create / open database safely
+const db = new sqlite3.Database(dbPath, (err) => {
+if (err) {
+console.error("❌ Failed to open database:", err.message);
+} else {
+console.log("✅ SQLite database connected at:", dbPath);
+}
+});
 
 db.run(`
 CREATE TABLE IF NOT EXISTS waitlist (
