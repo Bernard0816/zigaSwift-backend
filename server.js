@@ -1,3 +1,4 @@
+// server.js (FULL — copy/paste)
 require("dotenv").config();
 
 const express = require("express");
@@ -10,26 +11,26 @@ const nodemailer = require("nodemailer");
 const path = require("path");
 const fs = require("fs");
 
-const app = express(); // ✅ ONLY DECLARED ONCE
+const app = express();
 
 // 🔒 TRUST PROXY (REQUIRED FOR RENDER)
 app.set("trust proxy", 1);
 
 // 🌐 ENV
 const PORT = process.env.PORT || 10000;
-const SITE_URL = process.env.SITE_URL || "http://localhost:10000";
+const SITE_URL = process.env.SITE_URL || `http://localhost:${PORT}`;
 
 // 🛡️ SECURITY
 app.use(helmet());
-app.use(express.json());
+app.use(express.json({ limit: "200kb" }));
 
 // 🌍 CORS
 const corsOptions = {
 origin: [
 "https://bernard0816.github.io",
-"https://bernard0816.github.io/zigaswift",
-"https://bernard0816.github.io/zigaswift/",
-"https://zigaswift-backend.onrender.com"
+"https://bernard0816.github.io/ZigaSwift",
+"https://bernard0816.github.io/ZigaSwift/",
+"https://zigaswift-backend.onrender.com",
 ],
 methods: ["GET", "POST", "OPTIONS"],
 allowedHeaders: ["Content-Type"],
@@ -43,15 +44,18 @@ app.options("*", cors(corsOptions));
 const limiter = rateLimit({
 windowMs: 15 * 60 * 1000,
 max: 100,
+standardHeaders: true,
+legacyHeaders: false,
 });
 app.use(limiter);
 
 // 🗄️ DATABASE
-const dbPath = path.join(__dirname, "data", "zigaswift.db");
+const dataDir = path.join(__dirname, "data");
+const dbPath = path.join(dataDir, "zigaswift.db");
 
 // Ensure data folder exists
-if (!fs.existsSync(path.join(__dirname, "data"))) {
-fs.mkdirSync(path.join(__dirname, "data"));
+if (!fs.existsSync(dataDir)) {
+fs.mkdirSync(dataDir);
 }
 
 // Create / open database safely
@@ -63,6 +67,7 @@ console.log("✅ SQLite database connected at:", dbPath);
 }
 });
 
+// Create tables
 db.run(`
 CREATE TABLE IF NOT EXISTS waitlist (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,29 +78,63 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 `);
 
+db.run(`
+CREATE TABLE IF NOT EXISTS couriers (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+name TEXT,
+email TEXT,
+route TEXT,
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+`);
+
 // ✉️ EMAIL
 const transporter = nodemailer.createTransport({
 host: process.env.SMTP_HOST,
-port: process.env.SMTP_PORT,
-secure: false,
+port: Number(process.env.SMTP_PORT || 587),
+secure: false, // true only if you use port 465
 auth: {
 user: process.env.SMTP_USER,
 pass: process.env.SMTP_PASS,
 },
 });
 
+function sendMailSafe({ to, subject, html }) {
+// Don’t crash requests if email creds aren’t set yet
+if (!process.env.MAIL_FROM || !process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+console.warn("⚠️ Email not configured (skipping send).");
+return;
+}
+
+transporter.sendMail(
+{
+from: process.env.MAIL_FROM,
+to,
+subject,
+html,
+},
+(err) => {
+if (err) console.warn("⚠️ Email send failed:", err.message);
+}
+);
+}
+
 // ✅ HEALTH CHECK
 app.get("/", (req, res) => {
 res.json({ ok: true, message: "ZigaSwift backend is running 🚀" });
 });
 
+app.get("/api/health", (req, res) => {
+res.json({ ok: true });
+});
+
 // 📩 WAITLIST API
-app.post("/api/waitlist", async (req, res) => {
+app.post("/api/waitlist", (req, res) => {
 try {
 const schema = z.object({
-name: z.string().min(2),
-email: z.string().email(),
-city: z.string().min(2),
+name: z.string().min(2).max(80),
+email: z.string().email().max(120),
+city: z.string().min(2).max(120),
 });
 
 const data = schema.parse(req.body);
@@ -104,20 +143,56 @@ db.run(
 `INSERT INTO waitlist (name, email, city) VALUES (?, ?, ?)`,
 [data.name, data.email, data.city],
 function (err) {
-if (err) throw err;
+if (err) {
+console.error("❌ Waitlist insert failed:", err.message);
+return res.status(500).json({ ok: false, error: "Database error" });
+}
 
-transporter.sendMail({
-from: process.env.MAIL_FROM,
+sendMailSafe({
 to: data.email,
 subject: "Welcome to ZigaSwift 🚀",
 html: `<p>Hi ${data.name}, thanks for joining the ZigaSwift waitlist!</p>`,
 });
 
-res.json({ ok: true, id: this.lastID });
+return res.json({ ok: true, id: this.lastID });
 }
 );
 } catch (err) {
-res.status(400).json({ ok: false, error: err.message });
+return res.status(400).json({ ok: false, error: err.message });
+}
+});
+
+// 🚚 COURIER API (THIS FIXES YOUR 404)
+app.post("/api/courier", (req, res) => {
+try {
+const schema = z.object({
+name: z.string().min(2).max(80),
+email: z.string().email().max(120),
+route: z.string().min(2).max(120),
+});
+
+const data = schema.parse(req.body);
+
+db.run(
+`INSERT INTO couriers (name, email, route) VALUES (?, ?, ?)`,
+[data.name, data.email, data.route],
+function (err) {
+if (err) {
+console.error("❌ Courier insert failed:", err.message);
+return res.status(500).json({ ok: false, error: "Database error" });
+}
+
+sendMailSafe({
+to: data.email,
+subject: "ZigaSwift Courier Application Received ✅",
+html: `<p>Hi ${data.name}, we received your courier application for route: <b>${data.route}</b>. We'll contact you with next steps.</p>`,
+});
+
+return res.json({ ok: true, id: this.lastID });
+}
+);
+} catch (err) {
+return res.status(400).json({ ok: false, error: err.message });
 }
 });
 
