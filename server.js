@@ -162,37 +162,24 @@ return res.status(400).json({ ok: false, error: err.message });
 }
 });
 
-// 🚚 COURIER API (THIS FIXES YOUR 404)
-app.post("/api/courier", (req, res) => {
+// 🚚 COURIER API
+app.post("/api/courier", async (req, res) => {
 try {
 const schema = z.object({
-name: z.string().min(2).max(80),
-email: z.string().email().max(120),
-route: z.string().min(2).max(120),
+name: z.string().min(2),
+email: z.string().email(),
+route: z.string().min(2),
 });
 
 const data = schema.parse(req.body);
 
-db.run(
-`INSERT INTO couriers (name, email, route) VALUES (?, ?, ?)`,
-[data.name, data.email, data.route],
-function (err) {
-if (err) {
-console.error("❌ Courier insert failed:", err.message);
-return res.status(500).json({ ok: false, error: "Database error" });
-}
-
-sendMailSafe({
-to: data.email,
-subject: "ZigaSwift Courier Application Received ✅",
-html: `<p>Hi ${data.name}, we received your courier application for route: <b>${data.route}</b>. We'll contact you with next steps.</p>`,
+res.json({
+ok: true,
+message: "Courier application received",
+data,
 });
-
-return res.json({ ok: true, id: this.lastID });
-}
-);
 } catch (err) {
-return res.status(400).json({ ok: false, error: err.message });
+res.status(400).json({ ok: false, error: err.message });
 }
 });
 
