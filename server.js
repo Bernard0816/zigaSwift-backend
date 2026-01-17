@@ -30,10 +30,12 @@ origin: [
 "https://bernard0816.github.io",
 "https://bernard0816.github.io/ZigaSwift",
 "https://bernard0816.github.io/ZigaSwift/",
+// allow both backends (you have -backend and -backend-1)
 "https://zigaswift-backend.onrender.com",
+"https://zigaswift-backend-1.onrender.com",
 ],
 methods: ["GET", "POST", "OPTIONS"],
-allowedHeaders: ["Content-Type"],
+allowedHeaders: ["Content-Type", "x-admin-key"],
 optionsSuccessStatus: 204,
 };
 
@@ -53,12 +55,10 @@ app.use(limiter);
 const dataDir = path.join(__dirname, "data");
 const dbPath = path.join(dataDir, "zigaswift.db");
 
-// Ensure data folder exists
 if (!fs.existsSync(dataDir)) {
-fs.mkdirSync(dataDir);
+fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Create / open database safely
 const db = new sqlite3.Database(dbPath, (err) => {
 if (err) {
 console.error("❌ Failed to open database:", err.message);
@@ -92,7 +92,7 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 const transporter = nodemailer.createTransport({
 host: process.env.SMTP_HOST,
 port: Number(process.env.SMTP_PORT || 587),
-secure: false, // true only if you use port 465
+secure: false,
 auth: {
 user: process.env.SMTP_USER,
 pass: process.env.SMTP_PASS,
@@ -100,8 +100,12 @@ pass: process.env.SMTP_PASS,
 });
 
 function sendMailSafe({ to, subject, html }) {
-// Don’t crash requests if email creds aren’t set yet
-if (!process.env.MAIL_FROM || !process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+if (
+!process.env.MAIL_FROM ||
+!process.env.SMTP_HOST ||
+!process.env.SMTP_USER ||
+!process.env.SMTP_PASS
+) {
 console.warn("⚠️ Email not configured (skipping send).");
 return;
 }
@@ -126,6 +130,31 @@ res.json({ ok: true, message: "ZigaSwift backend is running 🚀" });
 
 app.get("/api/health", (req, res) => {
 res.json({ ok: true });
+});
+
+// ===============================
+// 🔐 Admin Dashboard (STATIC UI)
+// Folder structure you said:
+// /admin/admin/index.html
+// /admin/admin/admin.js
+// ===============================
+const adminDir = path.join(__dirname, "admin", "admin");
+
+// serve static files (index.html, admin.js, css, etc.)
+app.use("/admin", express.static(adminDir));
+
+// visiting /admin should return the admin dashboard page
+app.get("/admin", (req, res) => {
+const adminIndex = path.join(adminDir, "index.html");
+if (fs.existsSync(adminIndex)) return res.sendFile(adminIndex);
+return res.status(404).send("Admin index.html not found");
+});
+
+// (Optional) support /admin/ as well
+app.get("/admin/", (req, res) => {
+const adminIndex = path.join(adminDir, "index.html");
+if (fs.existsSync(adminIndex)) return res.sendFile(adminIndex);
+return res.status(404).send("Admin index.html not found");
 });
 
 // 📩 WAITLIST API
@@ -162,32 +191,93 @@ return res.status(400).json({ ok: false, error: err.message });
 }
 });
 
-// 🚚 COURIER API
-app.post("/api/courier", async (req, res) => {
+// 🚚 COURIER API (store in DB too)
+app.post("/api/courier", (req, res) => {
 try {
 const schema = z.object({
-name: z.string().min(2),
-email: z.string().email(),
-route: z.string().min(2),
+name: z.string().min(2).max(80),
+email: z.string().email().max(120),
+route: z.string().min(2).max(200),
 });
 
 const data = schema.parse(req.body);
 
-res.json({
-ok: true,
-message: "Courier application received",
-data,
+db.run(
+`INSERT INTO couriers (name, email, route) VALUES (?, ?, ?)`,
+[data.name, data.email, data.route],
+function (err) {
+if (err) {
+console.error("❌ Courier insert failed:", err.message);
+return res.status(500).json({ ok: false, error: "Database error" });
+}
+
+sendMailSafe({
+to: data.email,
+subject: "ZigaSwift Courier Application Received 🚚",
+html: `<p>Hi ${data.name}, we received your courier application. We'll reach out with next steps soon.</p>`,
 });
+
+return res.json({ ok: true, id: this.lastID });
+}
+);
 } catch (err) {
-res.status(400).json({ ok: false, error: err.message });
+return res.status(400).json({ ok: false, error: err.message });
 }
 });
 
-// 📁 FRONTEND FALLBACK (OPTIONAL)
-app.get("*", (req, res) => {
-const indexPath = path.join(__dirname, "public", "index.html");
-if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
-return res.status(404).send("Not Found");
+// ===============================
+// 🔐 Admin API endpoints
+// These are what your admin.js calls:
+// GET /api/admin/waitlist
+// GET /api/admin/couriers
+// Add a simple key check via x-admin-key header
+// ===============================
+function requireAdminKey(req, res, next) {
+const expected = (process.env.ADMIN_KEY || "").trim();
+if (!expected) {
+return res
+.status(500)
+.json({ ok: false, error: "ADMIN_KEY not set on server" });
+}
+
+const got = (req.header("x-admin-key") || "").trim();
+if (got !== expected) {
+return res.status(401).json({ ok: false, error: "Unauthorized" });
+}
+next();
+}
+
+app.get("/api/admin/waitlist", requireAdminKey, (req, res) => {
+db.all(
+`SELECT id, name, email, city, created_at FROM waitlist ORDER BY id DESC LIMIT 500`,
+[],
+(err, rows) => {
+if (err) {
+console.error("❌ Admin waitlist query failed:", err.message);
+return res.status(500).json({ ok: false, error: "Database error" });
+}
+return res.json({ ok: true, items: rows });
+}
+);
+});
+
+app.get("/api/admin/couriers", requireAdminKey, (req, res) => {
+db.all(
+`SELECT id, name, email, route, created_at FROM couriers ORDER BY id DESC LIMIT 500`,
+[],
+(err, rows) => {
+if (err) {
+console.error("❌ Admin couriers query failed:", err.message);
+return res.status(500).json({ ok: false, error: "Database error" });
+}
+return res.json({ ok: true, items: rows });
+}
+);
+});
+
+// ✅ Default 404 (KEEP LAST)
+app.use((req, res) => {
+res.status(404).json({ ok: false, error: "Not Found" });
 });
 
 // 🚀 START SERVER
