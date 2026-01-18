@@ -24,7 +24,9 @@ el.className = "msg" + (type ? " " + type : "");
 }
 
 function getConfig() {
-const apiBase = (localStorage.getItem("ZS_ADMIN_API_BASE") || DEFAULT_API_BASE).trim().replace(/\/$/, "");
+const apiBase = (localStorage.getItem("ZS_ADMIN_API_BASE") || DEFAULT_API_BASE)
+.trim()
+.replace(/\/$/, "");
 const adminKey = (localStorage.getItem("ZS_ADMIN_KEY") || "").trim();
 return { apiBase, adminKey };
 }
@@ -43,18 +45,34 @@ if (adminKey) headers["x-admin-key"] = adminKey;
 
 const res = await fetch(url, { headers });
 const text = await res.text();
+
 let data;
-try { data = JSON.parse(text); } catch { data = { raw: text }; }
+try {
+data = JSON.parse(text);
+} catch {
+data = { raw: text };
+}
 
 if (!res.ok) {
+// Clearer admin auth errors
+if (res.status === 401) {
+throw new Error(
+adminKey
+? "Admin key rejected (401). Paste the correct ADMIN_KEY and click Save."
+: "Admin key required (401). Paste ADMIN_KEY and click Save."
+);
+}
+
 const msg = data?.error || data?.message || `Request failed (${res.status})`;
 throw new Error(msg);
 }
+
 return data;
 }
 
 function renderRows(tbody, rows, cols) {
 tbody.innerHTML = "";
+
 if (!Array.isArray(rows) || rows.length === 0) {
 const tr = document.createElement("tr");
 const td = document.createElement("td");
@@ -99,13 +117,35 @@ setMsg(els.courierMsg, `❌ ${e.message}`, "bad");
 }
 }
 
+// UPDATED: Test API now validates the admin key too
 async function testAPI() {
 setMsg(els.settingsMsg, "Testing API…");
 try {
-const { apiBase } = getConfig();
-const res = await fetch(`${apiBase}/api/health`);
-if (!res.ok) throw new Error(`Health check failed (${res.status})`);
-setMsg(els.settingsMsg, "✅ API is reachable.", "ok");
+const { apiBase, adminKey } = getConfig();
+
+// 1) Basic health check
+const healthRes = await fetch(`${apiBase}/api/health`);
+if (!healthRes.ok) throw new Error(`Health check failed (${healthRes.status})`);
+
+// 2) Admin auth check (validates x-admin-key)
+const headers = {};
+if (adminKey) headers["x-admin-key"] = adminKey;
+
+const adminRes = await fetch(`${apiBase}/api/admin/waitlist`, { headers });
+
+if (adminRes.status === 401) {
+throw new Error(
+adminKey
+? "Admin key rejected (401 Unauthorized). Paste the correct ADMIN_KEY and click Save."
+: "Admin key required (401 Unauthorized). Paste ADMIN_KEY and click Save."
+);
+}
+
+if (!adminRes.ok) {
+throw new Error(`Admin endpoint failed (${adminRes.status})`);
+}
+
+setMsg(els.settingsMsg, "✅ API reachable + Admin key OK.", "ok");
 } catch (e) {
 setMsg(els.settingsMsg, `❌ ${e.message}`, "bad");
 }
@@ -131,7 +171,7 @@ els.testBtn.addEventListener("click", testAPI);
 els.refreshWaitlist.addEventListener("click", loadWaitlist);
 els.refreshCouriers.addEventListener("click", loadCouriers);
 
-// Try loading immediately (will show a useful error until backend endpoints exist)
+// Try loading immediately
 loadWaitlist();
 loadCouriers();
 })();
