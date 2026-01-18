@@ -172,7 +172,37 @@ return res.status(401).send("Invalid credentials");
 }
 
 // ------------------------------
-// ✅ ADMIN UI (STATIC) — AUTO-DETECT PATH
+// 🔐 ADMIN BASIC AUTH (LOGIN PROMPT)
+// ------------------------------
+function requireAdminLogin(req, res, next) {
+const user = process.env.ADMIN_USER;
+const pass = process.env.ADMIN_PASS;
+
+if (!user || !pass) {
+return res
+.status(500)
+.send("Admin UI not configured (set ADMIN_USER and ADMIN_PASS)");
+}
+
+const auth = req.headers.authorization || "";
+const [type, encoded] = auth.split(" ");
+
+if (type !== "Basic" || !encoded) {
+res.set("WWW-Authenticate", 'Basic realm="Admin Area"');
+return res.status(401).send("Authentication required");
+}
+
+const decoded = Buffer.from(encoded, "base64").toString();
+const [u, p] = decoded.split(":");
+
+if (u === user && p === pass) return next();
+
+res.set("WWW-Authenticate", 'Basic realm="Admin Area"');
+return res.status(401).send("Invalid credentials");
+}
+
+// ------------------------------
+// ✅ ADMIN UI (STATIC + LOGIN)
 // ------------------------------
 function pickAdminDir() {
 const candidates = [
@@ -193,15 +223,13 @@ if (adminDir) {
 console.log("✅ Admin directory:", adminDir);
 console.log("✅ Admin dir files:", fs.readdirSync(adminDir));
 
-// Protect UI first, then serve static files
-app.use("/admin", requireBasicAuth, express.static(adminDir, { index: "index.html" }));
+app.use("/admin", requireAdminLogin, express.static(adminDir));
 
-// Handle both /admin and /admin/
-app.get(["/admin", "/admin/"], requireBasicAuth, (req, res) => {
+app.get(["/admin", "/admin/"], requireAdminLogin, (req, res) => {
 return res.sendFile(path.join(adminDir, "index.html"));
 });
 } else {
-console.warn("⚠️ Admin UI directory not found. Checked admin/admin and admin/");
+console.warn("⚠️ Admin UI directory not found.");
 app.get(["/admin", "/admin/"], (req, res) => {
 return res.status(404).send("Admin UI not found");
 });
