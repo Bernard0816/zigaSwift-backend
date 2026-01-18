@@ -128,7 +128,7 @@ res.json({ ok: true });
 });
 ​
 // =========================
-// ✅ ADMIN (STATIC UI)
+//  ADMIN (STATIC UI)
 // =========================
 
 const adminDir = path.resolve(__dirname, "admin", "admin");
