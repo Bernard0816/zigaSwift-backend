@@ -1,4 +1,4 @@
-// server.js (FULL — copy/paste)
+// server.js (FULL - clean ASCII version)
 require("dotenv").config();
 
 const express = require("express");
@@ -13,24 +13,25 @@ const fs = require("fs");
 
 const app = express();
 
-// 🔒 TRUST PROXY (REQUIRED FOR RENDER)
+// REQUIRED FOR RENDER (trust proxy)
 app.set("trust proxy", 1);
 
-// 🌐 ENV
+// ENV
 const PORT = process.env.PORT || 10000;
 const SITE_URL = process.env.SITE_URL || `http://localhost:${PORT}`;
 
-// 🛡️ SECURITY
+// SECURITY
 app.use(helmet());
 app.use(express.json({ limit: "200kb" }));
 
-// 🌍 CORS
+// CORS
 const corsOptions = {
 origin: [
 "https://bernard0816.github.io",
 "https://bernard0816.github.io/ZigaSwift",
 "https://bernard0816.github.io/ZigaSwift/",
 "https://zigaswift-backend.onrender.com",
+"https://zigaswift-backend-1.onrender.com",
 ],
 methods: ["GET", "POST", "OPTIONS"],
 allowedHeaders: ["Content-Type", "x-admin-key"],
@@ -40,7 +41,7 @@ optionsSuccessStatus: 204,
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-// 🚦 RATE LIMIT
+// RATE LIMIT
 const limiter = rateLimit({
 windowMs: 15 * 60 * 1000,
 max: 100,
@@ -49,31 +50,27 @@ legacyHeaders: false,
 });
 app.use(limiter);
 
-// 🗄️ DATABASE
-const dataDir = path.join(__dirname, "data");
-const dbPath = path.join(dataDir, "zigaswift.db");
+// DATABASE (Render-safe path support)
+const DEFAULT_DB_PATH = path.join(__dirname, "data", "zigaswift.db");
+const DB_PATH = process.env.DB_PATH || DEFAULT_DB_PATH;
 
-// Ensure data folder exists
-if (!fs.existsSync(dataDir)) {
-fs.mkdirSync(dataDir);
-}
+// Ensure DB directory exists
+const dbDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
-// Create / open database safely
-const db = new sqlite3.Database(dbPath, (err) => {
-if (err) {
-console.error("❌ Failed to open database:", err.message);
-} else {
-console.log("✅ SQLite database connected at:", dbPath);
-}
+// Open DB
+const db = new sqlite3.Database(DB_PATH, (err) => {
+if (err) console.error("Failed to open database:", err.message);
+else console.log("SQLite database connected at:", DB_PATH);
 });
 
 // Create tables
 db.run(`
 CREATE TABLE IF NOT EXISTS waitlist (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT,
-email TEXT,
-city TEXT,
+name TEXT NOT NULL,
+email TEXT NOT NULL,
+city TEXT NOT NULL,
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 `);
@@ -81,14 +78,14 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 db.run(`
 CREATE TABLE IF NOT EXISTS couriers (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT,
-email TEXT,
-route TEXT,
+name TEXT NOT NULL,
+email TEXT NOT NULL,
+route TEXT NOT NULL,
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 `);
 
-// ✉️ EMAIL
+// EMAIL (safe send)
 const transporter = nodemailer.createTransport({
 host: process.env.SMTP_HOST,
 port: Number(process.env.SMTP_PORT || 587),
@@ -106,78 +103,58 @@ if (
 !process.env.SMTP_USER ||
 !process.env.SMTP_PASS
 ) {
-console.warn("⚠️ Email not configured (skipping send).");
+console.warn("Email not configured (skipping send).");
 return;
 }
 
 transporter.sendMail(
-{ from: process.env.MAIL_FROM, to, subject, html },
+{
+from: process.env.MAIL_FROM,
+to,
+subject,
+html,
+},
 (err) => {
-if (err) console.warn("⚠️ Email send failed:", err.message);
+if (err) console.warn("Email send failed:", err.message);
 }
 );
 }
 
-// ✅ HEALTH CHECK
+// HEALTH
 app.get("/", (req, res) => {
-res.json({ ok: true, message: "ZigaSwift backend is running 🚀" });
+res.json({ ok: true, message: "ZigaSwift backend is running" });
 });
 
 app.get("/api/health", (req, res) => {
 res.json({ ok: true });
 });
-​
-// =========================
-//  ADMIN (STATIC UI)
-// =========================
 
+// ADMIN (STATIC UI)
+// Your repo path is: admin/admin/index.html
 const adminDir = path.resolve(__dirname, "admin", "admin");
 
-console.log("Admin directory:", adminDir);
-
+// Serve static files at /admin (js, css, etc.)
 app.use("/admin", express.static(adminDir));
 
+// Ensure /admin returns the admin index
 app.get("/admin", (req, res) => {
 const adminIndex = path.join(adminDir, "index.html");
-if (fs.existsSync(adminIndex)) {
-return res.sendFile(adminIndex);
-}
+if (fs.existsSync(adminIndex)) return res.sendFile(adminIndex);
 return res.status(404).send("Admin UI not found");
 });
 
-// Optional: protect admin API with x-admin-key (recommended)
+// Optional: protect admin API with x-admin-key
 function requireAdminKey(req, res, next) {
 const expected = (process.env.ADMIN_KEY || "").trim();
 if (!expected) return next(); // if not set, allow (dev mode)
+
 const got = (req.header("x-admin-key") || "").trim();
 if (got && got === expected) return next();
+
 return res.status(401).json({ ok: false, error: "Unauthorized" });
 }
 
-// Admin read endpoints used by admin.js
-app.get("/api/admin/waitlist", requireAdminKey, (req, res) => {
-db.all(
-`SELECT id, name, email, city, created_at FROM waitlist ORDER BY created_at DESC LIMIT 500`,
-[],
-(err, rows) => {
-if (err) return res.status(500).json({ ok: false, error: "Database error" });
-res.json({ ok: true, items: rows || [] });
-}
-);
-});
-
-app.get("/api/admin/couriers", requireAdminKey, (req, res) => {
-db.all(
-`SELECT id, name, email, route, created_at FROM couriers ORDER BY created_at DESC LIMIT 500`,
-[],
-(err, rows) => {
-if (err) return res.status(500).json({ ok: false, error: "Database error" });
-res.json({ ok: true, items: rows || [] });
-}
-);
-});
-
-// 📩 WAITLIST API
+// WAITLIST API (public)
 app.post("/api/waitlist", (req, res) => {
 try {
 const schema = z.object({
@@ -193,13 +170,13 @@ db.run(
 [data.name, data.email, data.city],
 function (err) {
 if (err) {
-console.error("❌ Waitlist insert failed:", err.message);
+console.error("Waitlist insert failed:", err.message);
 return res.status(500).json({ ok: false, error: "Database error" });
 }
 
 sendMailSafe({
 to: data.email,
-subject: "Welcome to ZigaSwift 🚀",
+subject: "Welcome to ZigaSwift",
 html: `<p>Hi ${data.name}, thanks for joining the ZigaSwift waitlist!</p>`,
 });
 
@@ -211,13 +188,13 @@ return res.status(400).json({ ok: false, error: err.message });
 }
 });
 
-// 🚚 COURIER API (also store it so admin can view it)
+// COURIER API (public) - store in DB
 app.post("/api/courier", (req, res) => {
 try {
 const schema = z.object({
-name: z.string().min(2),
-email: z.string().email(),
-route: z.string().min(2),
+name: z.string().min(2).max(80),
+email: z.string().email().max(120),
+route: z.string().min(2).max(160),
 });
 
 const data = schema.parse(req.body);
@@ -226,29 +203,54 @@ db.run(
 `INSERT INTO couriers (name, email, route) VALUES (?, ?, ?)`,
 [data.name, data.email, data.route],
 function (err) {
-if (err) return res.status(500).json({ ok: false, error: "Database error" });
+if (err) {
+console.error("Courier insert failed:", err.message);
+return res.status(500).json({ ok: false, error: "Database error" });
+}
 
-return res.json({
-ok: true,
-message: "Courier application received",
-id: this.lastID,
-data,
-});
+return res.json({ ok: true, id: this.lastID });
 }
 );
 } catch (err) {
-res.status(400).json({ ok: false, error: err.message });
+return res.status(400).json({ ok: false, error: err.message });
 }
 });
 
-// 📁 FRONTEND FALLBACK (KEEP LAST)
-app.get("*", (req, res) => {
-const indexPath = path.join(__dirname, "public", "index.html");
-if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
-return res.status(404).send("Not Found");
+// ADMIN APIs (used by your admin.js)
+app.get("/api/admin/waitlist", requireAdminKey, (req, res) => {
+db.all(
+`SELECT id, name, email, city, created_at FROM waitlist ORDER BY id DESC LIMIT 500`,
+[],
+(err, rows) => {
+if (err) {
+console.error("Admin waitlist fetch failed:", err.message);
+return res.status(500).json({ ok: false, error: "Database error" });
+}
+return res.json({ ok: true, items: rows || [] });
+}
+);
 });
 
-// 🚀 START SERVER
+app.get("/api/admin/couriers", requireAdminKey, (req, res) => {
+db.all(
+`SELECT id, name, email, route, created_at FROM couriers ORDER BY id DESC LIMIT 500`,
+[],
+(err, rows) => {
+if (err) {
+console.error("Admin couriers fetch failed:", err.message);
+return res.status(500).json({ ok: false, error: "Database error" });
+}
+return res.json({ ok: true, items: rows || [] });
+}
+);
+});
+
+// DEFAULT 404 (keep last)
+app.use((req, res) => {
+res.status(404).json({ ok: false, error: "Not found" });
+});
+
+// START
 app.listen(PORT, () => {
 console.log(`ZigaSwift backend running on ${SITE_URL} (PORT ${PORT})`);
 });
