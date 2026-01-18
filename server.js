@@ -24,7 +24,7 @@ const SITE_URL = process.env.SITE_URL || `http://localhost:${PORT}`;
 app.use(helmet());
 app.use(express.json({ limit: "200kb" }));
 
-// 🌍 CORS (IMPORTANT: allow x-admin-key)
+// 🌍 CORS (allow x-admin-key)
 const allowedOrigins = new Set([
 "https://bernard0816.github.io",
 "https://bernard0816.github.io/ZigaSwift",
@@ -112,22 +112,64 @@ console.warn("⚠️ Email not configured (skipping send).");
 return;
 }
 
-transporter.sendMail(
-{ from: process.env.MAIL_FROM, to, subject, html },
-(err) => {
+transporter.sendMail({ from: process.env.MAIL_FROM, to, subject, html }, (err) => {
 if (err) console.warn("⚠️ Email send failed:", err.message);
-}
-);
+});
 }
 
 // ✅ HEALTH CHECK
 app.get("/", (req, res) => {
 res.json({ ok: true, message: "ZigaSwift backend is running 🚀" });
 });
-
 app.get("/api/health", (req, res) => {
 res.json({ ok: true });
 });
+
+// ------------------------------
+// 🔐 ADMIN API AUTH (x-admin-key)
+// ------------------------------
+function requireAdminKey(req, res, next) {
+const expected = (process.env.ADMIN_KEY || "").trim();
+
+// Safer: if ADMIN_KEY not set, lock it down
+if (!expected) {
+return res.status(500).json({ ok: false, error: "ADMIN_KEY not set on server" });
+}
+
+const got = (req.header("x-admin-key") || "").trim();
+if (got && got === expected) return next();
+
+return res.status(401).json({ ok: false, error: "Unauthorized" });
+}
+
+// ------------------------------
+// 🔐 ADMIN UI LOCK (Basic Auth)
+// Add env vars: ADMIN_USER, ADMIN_PASS
+// ------------------------------
+function requireBasicAuth(req, res, next) {
+const user = (process.env.ADMIN_USER || "").trim();
+const pass = (process.env.ADMIN_PASS || "").trim();
+
+// If not set, block (safer)
+if (!user || !pass) {
+return res.status(500).send("Admin UI not configured (set ADMIN_USER and ADMIN_PASS)");
+}
+
+const header = req.headers.authorization || "";
+if (!header.startsWith("Basic ")) {
+res.setHeader("WWW-Authenticate", 'Basic realm="ZigaSwift Admin"');
+return res.status(401).send("Authentication required");
+}
+
+const base64 = header.slice(6);
+const decoded = Buffer.from(base64, "base64").toString("utf8");
+const [u, p] = decoded.split(":");
+
+if (u === user && p === pass) return next();
+
+res.setHeader("WWW-Authenticate", 'Basic realm="ZigaSwift Admin"');
+return res.status(401).send("Invalid credentials");
+}
 
 // ------------------------------
 // ✅ ADMIN UI (STATIC) — AUTO-DETECT PATH
@@ -151,10 +193,11 @@ if (adminDir) {
 console.log("✅ Admin directory:", adminDir);
 console.log("✅ Admin dir files:", fs.readdirSync(adminDir));
 
-app.use("/admin", express.static(adminDir, { index: "index.html" }));
+// Protect UI first, then serve static files
+app.use("/admin", requireBasicAuth, express.static(adminDir, { index: "index.html" }));
 
 // Handle both /admin and /admin/
-app.get(["/admin", "/admin/"], (req, res) => {
+app.get(["/admin", "/admin/"], requireBasicAuth, (req, res) => {
 return res.sendFile(path.join(adminDir, "index.html"));
 });
 } else {
@@ -162,17 +205,6 @@ console.warn("⚠️ Admin UI directory not found. Checked admin/admin and admin
 app.get(["/admin", "/admin/"], (req, res) => {
 return res.status(404).send("Admin UI not found");
 });
-}
-
-// ------------------------------
-// ✅ ADMIN AUTH (x-admin-key) for admin API endpoints
-// ------------------------------
-function requireAdminKey(req, res, next) {
-const expected = (process.env.ADMIN_KEY || "").trim();
-if (!expected) return next(); // if not set, allow (dev mode)
-const got = (req.header("x-admin-key") || "").trim();
-if (got && got === expected) return next();
-return res.status(401).json({ ok: false, error: "Unauthorized" });
 }
 
 // ------------------------------
@@ -241,7 +273,7 @@ return res.status(400).json({ ok: false, error: err.message });
 });
 
 // ------------------------------
-// ✅ ADMIN API endpoints used by admin.js
+// ✅ ADMIN API endpoints used by admin.js (LOCKED)
 // ------------------------------
 app.get("/api/admin/waitlist", requireAdminKey, (req, res) => {
 db.all(
