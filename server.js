@@ -126,20 +126,22 @@ res.json({ ok: true, message: "ZigaSwift backend is running 🚀" });
 app.get("/api/health", (req, res) => {
 res.json({ ok: true });
 });
-
+​
 // =========================
-// ✅ ADMIN (STATIC + API)
+// ✅ ADMIN (STATIC UI)
 // =========================
 
-// Serve your admin dashboard from: /admin
-// Folder: admin/admin/index.html + admin/admin/admin.js
-const adminDir = path.join(__dirname, "admin", "admin");
+const adminDir = path.resolve(__dirname, "admin", "admin");
+
+console.log("Admin directory:", adminDir);
+
 app.use("/admin", express.static(adminDir));
 
-// Make sure /admin (no trailing slash) also loads the page
 app.get("/admin", (req, res) => {
 const adminIndex = path.join(adminDir, "index.html");
-if (fs.existsSync(adminIndex)) return res.sendFile(adminIndex);
+if (fs.existsSync(adminIndex)) {
+return res.sendFile(adminIndex);
+}
 return res.status(404).send("Admin UI not found");
 });
 
