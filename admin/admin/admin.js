@@ -5,21 +5,6 @@ console.log("✅ admin.js loaded");
 
 const DEFAULT_API_BASE = "https://zigaswift-backend.onrender.com";
 
-const els = {
-apiBase: document.getElementById("apiBase"),
-adminKey: document.getElementById("adminKey"),
-apiBaseLabel: document.getElementById("apiBaseLabel"),
-saveBtn: document.getElementById("saveBtn"),
-testBtn: document.getElementById("testBtn"),
-settingsMsg: document.getElementById("settingsMsg"),
-refreshWaitlist: document.getElementById("refreshWaitlist"),
-refreshCouriers: document.getElementById("refreshCouriers"),
-waitlistMsg: document.getElementById("waitlistMsg"),
-courierMsg: document.getElementById("courierMsg"),
-waitlistBody: document.getElementById("waitlistBody"),
-courierBody: document.getElementById("courierBody"),
-};
-
 function setMsg(el, text, type = "") {
 if (!el) return;
 el.textContent = text || "";
@@ -35,8 +20,8 @@ return { apiBase, adminKey };
 }
 
 function saveConfig(apiBase, adminKey) {
-localStorage.setItem("ZS_ADMIN_API_BASE", apiBase.trim());
-localStorage.setItem("ZS_ADMIN_KEY", adminKey.trim());
+localStorage.setItem("ZS_ADMIN_API_BASE", (apiBase || "").trim());
+localStorage.setItem("ZS_ADMIN_KEY", (adminKey || "").trim());
 }
 
 async function getJSON(path) {
@@ -50,8 +35,11 @@ const res = await fetch(url, { headers });
 const text = await res.text();
 
 let data;
-try { data = JSON.parse(text); }
-catch { data = { raw: text }; }
+try {
+data = JSON.parse(text);
+} catch {
+data = { raw: text };
+}
 
 if (!res.ok) {
 const msg = data?.error || data?.message || `Request failed (${res.status})`;
@@ -61,8 +49,9 @@ return data;
 }
 
 function renderRows(tbody, rows, cols) {
-tbody.innerHTML = "";
+if (!tbody) return;
 
+tbody.innerHTML = "";
 if (!Array.isArray(rows) || rows.length === 0) {
 const tr = document.createElement("tr");
 const td = document.createElement("td");
@@ -85,23 +74,39 @@ tbody.appendChild(tr);
 }
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+const els = {
+apiBase: document.getElementById("apiBase"),
+adminKey: document.getElementById("adminKey"),
+apiBaseLabel: document.getElementById("apiBaseLabel"),
+saveBtn: document.getElementById("saveBtn"),
+testBtn: document.getElementById("testBtn"),
+settingsMsg: document.getElementById("settingsMsg"),
+refreshWaitlist: document.getElementById("refreshWaitlist"),
+refreshCouriers: document.getElementById("refreshCouriers"),
+waitlistMsg: document.getElementById("waitlistMsg"),
+courierMsg: document.getElementById("courierMsg"),
+waitlistBody: document.getElementById("waitlistBody"),
+courierBody: document.getElementById("courierBody"),
+};
+
 async function loadWaitlist() {
 setMsg(els.waitlistMsg, "Loading waitlist…");
 try {
 const data = await getJSON("/api/admin/waitlist");
 renderRows(els.waitlistBody, data.items, ["id", "name", "email", "city", "created_at"]);
-setMsg(els.waitlistMsg, `Loaded ${data.items?.length ?? 0} records.`, "ok");
+setMsg(els.waitlistMsg, `Loaded ${data.items?.length ?? 0} waitlist records.`, "ok");
 } catch (e) {
 setMsg(els.waitlistMsg, `❌ ${e.message}`, "bad");
 }
 }
 
 async function loadCouriers() {
-setMsg(els.courierMsg, "Loading couriers…");
+setMsg(els.courierMsg, "Loading courier applications…");
 try {
 const data = await getJSON("/api/admin/couriers");
 renderRows(els.courierBody, data.items, ["id", "name", "email", "route", "created_at"]);
-setMsg(els.courierMsg, `Loaded ${data.items?.length ?? 0} records.`, "ok");
+setMsg(els.courierMsg, `Loaded ${data.items?.length ?? 0} courier applications.`, "ok");
 } catch (e) {
 setMsg(els.courierMsg, `❌ ${e.message}`, "bad");
 }
@@ -119,31 +124,28 @@ setMsg(els.settingsMsg, `❌ ${e.message}`, "bad");
 }
 }
 
-// INIT AFTER DOM LOAD
-document.addEventListener("DOMContentLoaded", () => {
-console.log("✅ DOM loaded");
-
+// Init values
 const { apiBase, adminKey } = getConfig();
-els.apiBase.value = apiBase;
-els.adminKey.value = adminKey;
-els.apiBaseLabel.textContent = apiBase;
+if (els.apiBase) els.apiBase.value = apiBase;
+if (els.adminKey) els.adminKey.value = adminKey;
+if (els.apiBaseLabel) els.apiBaseLabel.textContent = apiBase;
 
+// Button wiring
+if (els.saveBtn) {
 els.saveBtn.addEventListener("click", () => {
-const api = els.apiBase.value.trim().replace(/\/$/, "") || DEFAULT_API_BASE;
-const key = els.adminKey.value.trim();
-
+const api = (els.apiBase?.value || "").trim().replace(/\/$/, "") || DEFAULT_API_BASE;
+const key = (els.adminKey?.value || "").trim();
 saveConfig(api, key);
-
-els.apiBaseLabel.textContent = api;
-setMsg(els.settingsMsg, "✅ Saved successfully.", "ok");
-
-console.log("Saved:", api, key);
+if (els.apiBaseLabel) els.apiBaseLabel.textContent = api;
+setMsg(els.settingsMsg, "✅ Saved.", "ok");
 });
+}
 
-els.testBtn.addEventListener("click", testAPI);
-els.refreshWaitlist.addEventListener("click", loadWaitlist);
-els.refreshCouriers.addEventListener("click", loadCouriers);
+if (els.testBtn) els.testBtn.addEventListener("click", testAPI);
+if (els.refreshWaitlist) els.refreshWaitlist.addEventListener("click", loadWaitlist);
+if (els.refreshCouriers) els.refreshCouriers.addEventListener("click", loadCouriers);
 
+// Auto-load
 loadWaitlist();
 loadCouriers();
 });
