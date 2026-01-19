@@ -1,46 +1,9 @@
 // ZigaSwift Admin Dashboard (static)
 // Stores API base + optional admin key in localStorage
 
-console.log("✅ admin.js loaded");
-
-window.addEventListener("DOMContentLoaded", () => {
-const saveBtn = document.getElementById("saveBtn");
-const testBtn = document.getElementById("testBtn");
-const apiBase = document.getElementById("apiBase");
-const adminKey = document.getElementById("adminKey");
-const settingsMsg = document.getElementById("settingsMsg");
-const apiBaseLabel = document.getElementById("apiBaseLabel");
-
-console.log("saveBtn:", saveBtn, "testBtn:", testBtn, "apiBase:", apiBase, "adminKey:", adminKey);
-
-if (!saveBtn || !testBtn || !apiBase || !adminKey) {
-if (settingsMsg) settingsMsg.textContent = "❌ Admin UI IDs mismatch. Check index.html element ids.";
-return;
-}
-
-saveBtn.addEventListener("click", () => {
-const api = (apiBase.value || DEFAULT_API_BASE).trim().replace(/\/$/, "");
-const key = (adminKey.value || "").trim();
-localStorage.setItem("ZS_ADMIN_API_BASE", api);
-localStorage.setItem("ZS_ADMIN_KEY", key);
-if (apiBaseLabel) apiBaseLabel.textContent = api;
-if (settingsMsg) settingsMsg.textContent = "✅ Saved.";
-console.log("✅ Saved config:", { api, key });
-});
-
-testBtn.addEventListener("click", async () => {
-try {
-const api = (localStorage.getItem("ZS_ADMIN_API_BASE") || DEFAULT_API_BASE).trim().replace(/\/$/, "");
-const res = await fetch(`${api}/api/health`);
-if (!res.ok) throw new Error(`Health check failed (${res.status})`);
-if (settingsMsg) settingsMsg.textContent = "✅ API is reachable.";
-} catch (e) {
-if (settingsMsg) settingsMsg.textContent = `❌ ${e.message}`;
-}
-});
-});
-
 const DEFAULT_API_BASE = "https://zigaswift-backend.onrender.com";
+
+console.log("✅ admin.js loaded");
 
 function setMsg(el, text, type = "") {
 if (!el) return;
@@ -111,21 +74,65 @@ tbody.appendChild(tr);
 }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", () => {
 const els = {
 apiBase: document.getElementById("apiBase"),
 adminKey: document.getElementById("adminKey"),
 apiBaseLabel: document.getElementById("apiBaseLabel"),
+
 saveBtn: document.getElementById("saveBtn"),
 testBtn: document.getElementById("testBtn"),
 settingsMsg: document.getElementById("settingsMsg"),
+
 refreshWaitlist: document.getElementById("refreshWaitlist"),
 refreshCouriers: document.getElementById("refreshCouriers"),
+
 waitlistMsg: document.getElementById("waitlistMsg"),
 courierMsg: document.getElementById("courierMsg"),
+
 waitlistBody: document.getElementById("waitlistBody"),
 courierBody: document.getElementById("courierBody"),
 };
+
+console.log("🔎 Elements:", els);
+
+// If key elements are missing, show message and stop
+if (!els.apiBase || !els.adminKey || !els.saveBtn || !els.testBtn) {
+setMsg(els.settingsMsg, "❌ Admin UI IDs mismatch. Check index.html element ids.", "bad");
+return;
+}
+
+// Init values
+const cfg = getConfig();
+els.apiBase.value = cfg.apiBase;
+els.adminKey.value = cfg.adminKey;
+if (els.apiBaseLabel) els.apiBaseLabel.textContent = cfg.apiBase;
+
+// Save button
+els.saveBtn.addEventListener("click", () => {
+const api = (els.apiBase.value || DEFAULT_API_BASE).trim().replace(/\/$/, "");
+const key = (els.adminKey.value || "").trim();
+
+saveConfig(api, key);
+
+if (els.apiBaseLabel) els.apiBaseLabel.textContent = api;
+setMsg(els.settingsMsg, "✅ Saved to browser localStorage.", "ok");
+
+console.log("✅ Saved config:", { api, key });
+});
+
+// Test API button
+els.testBtn.addEventListener("click", async () => {
+setMsg(els.settingsMsg, "Testing API…");
+try {
+const { apiBase } = getConfig();
+const res = await fetch(`${apiBase}/api/health`);
+if (!res.ok) throw new Error(`Health check failed (${res.status})`);
+setMsg(els.settingsMsg, "✅ API is reachable.", "ok");
+} catch (e) {
+setMsg(els.settingsMsg, `❌ ${e.message}`, "bad");
+}
+});
 
 async function loadWaitlist() {
 setMsg(els.waitlistMsg, "Loading waitlist…");
@@ -149,40 +156,10 @@ setMsg(els.courierMsg, `❌ ${e.message}`, "bad");
 }
 }
 
-async function testAPI() {
-setMsg(els.settingsMsg, "Testing API…");
-try {
-const { apiBase } = getConfig();
-const res = await fetch(`${apiBase}/api/health`);
-if (!res.ok) throw new Error(`Health check failed (${res.status})`);
-setMsg(els.settingsMsg, "✅ API is reachable.", "ok");
-} catch (e) {
-setMsg(els.settingsMsg, `❌ ${e.message}`, "bad");
-}
-}
-
-// Init values
-const { apiBase, adminKey } = getConfig();
-if (els.apiBase) els.apiBase.value = apiBase;
-if (els.adminKey) els.adminKey.value = adminKey;
-if (els.apiBaseLabel) els.apiBaseLabel.textContent = apiBase;
-
-// Button wiring
-if (els.saveBtn) {
-els.saveBtn.addEventListener("click", () => {
-const api = (els.apiBase?.value || "").trim().replace(/\/$/, "") || DEFAULT_API_BASE;
-const key = (els.adminKey?.value || "").trim();
-saveConfig(api, key);
-if (els.apiBaseLabel) els.apiBaseLabel.textContent = api;
-setMsg(els.settingsMsg, "✅ Saved.", "ok");
-});
-}
-
-if (els.testBtn) els.testBtn.addEventListener("click", testAPI);
 if (els.refreshWaitlist) els.refreshWaitlist.addEventListener("click", loadWaitlist);
 if (els.refreshCouriers) els.refreshCouriers.addEventListener("click", loadCouriers);
 
-// Auto-load
+// Auto load
 loadWaitlist();
 loadCouriers();
 });
