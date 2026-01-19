@@ -1,3 +1,4 @@
+​You​
 // server.js (FULL — copy/paste)
 require("dotenv").config();
 
@@ -29,7 +30,6 @@ const allowedOrigins = new Set([
 "https://bernard0816.github.io",
 "https://bernard0816.github.io/ZigaSwift",
 "https://bernard0816.github.io/ZigaSwift/",
-"https://zigaswift-backend.onrenderder.com", // (typo safe if ever used)
 "https://zigaswift-backend.onrender.com",
 "https://zigaswift-backend-1.onrender.com",
 ]);
@@ -37,7 +37,7 @@ const allowedOrigins = new Set([
 app.use(
 cors({
 origin: (origin, cb) => {
-if (!origin) return cb(null, true); // allow curl/postman
+if (!origin) return cb(null, true);
 if (allowedOrigins.has(origin)) return cb(null, true);
 return cb(new Error("CORS blocked: " + origin));
 },
@@ -46,9 +46,7 @@ allowedHeaders: ["Content-Type", "x-admin-key"],
 optionsSuccessStatus: 204,
 })
 );
-
-// ✅ IMPORTANT: use regex for OPTIONS to avoid Express 5 "*" crashes
-app.options(/.*/, cors());
+app.options("*", cors());
 
 // 🚦 RATE LIMIT
 app.use(
@@ -134,7 +132,6 @@ res.json({ ok: true });
 function requireAdminKey(req, res, next) {
 const expected = (process.env.ADMIN_KEY || "").trim();
 
-// If ADMIN_KEY not set, lock down the admin API
 if (!expected) {
 return res.status(500).json({ ok: false, error: "ADMIN_KEY not set on server" });
 }
@@ -146,7 +143,7 @@ return res.status(401).json({ ok: false, error: "Unauthorized" });
 }
 
 // ------------------------------
-// 🔐 ADMIN UI BASIC AUTH (LOGIN PROMPT)
+// 🔐 ADMIN UI LOCK (Basic Auth)
 // Env vars required: ADMIN_USER, ADMIN_PASS
 // ------------------------------
 function requireAdminLogin(req, res, next) {
@@ -154,7 +151,9 @@ const user = (process.env.ADMIN_USER || "").trim();
 const pass = (process.env.ADMIN_PASS || "").trim();
 
 if (!user || !pass) {
-return res.status(500).send("Admin UI not configured (set ADMIN_USER and ADMIN_PASS)");
+return res
+.status(500)
+.send("Admin UI not configured (set ADMIN_USER and ADMIN_PASS)");
 }
 
 const auth = req.headers.authorization || "";
@@ -175,28 +174,47 @@ return res.status(401).send("Invalid credentials");
 }
 
 // ------------------------------
-// ✅ ADMIN UI (STATIC)
-// Your repo structure shows: admin/admin/index.html + admin/admin/admin.js
-// So we pin the static dir to that.
+// ✅ ADMIN UI (STATIC + LOGIN)
+// Robust directory detection
 // ------------------------------
-const adminDir = path.resolve(__dirname, "admin", "admin");
-const adminIndex = path.join(adminDir, "index.html");
-const adminJs = path.join(adminDir, "admin.js");
+function resolveAdminUi() {
+const candidates = [
+path.resolve(__dirname, "admin", "admin"), // your current structure
+path.resolve(__dirname, "admin"), // fallback
+];
 
-console.log("🧭 AdminDir:", adminDir);
-console.log("🧭 Admin index exists?", fs.existsSync(adminIndex));
-console.log("🧭 Admin js exists?", fs.existsSync(adminJs));
+for (const dir of candidates) {
+const indexFile = path.join(dir, "index.html");
+const jsFile = path.join(dir, "admin.js");
 
-if (fs.existsSync(adminIndex) && fs.existsSync(adminJs)) {
-// Serve the admin UI + assets under /admin (protected by Basic Auth)
-app.use("/admin", requireAdminLogin, express.static(adminDir));
+const indexOk = fs.existsSync(indexFile);
+const jsOk = fs.existsSync(jsFile);
 
-// Make sure /admin and /admin/ always load index.html
+console.log("🔎 Checking admin dir:", dir);
+console.log(" - index.html exists:", indexOk);
+console.log(" - admin.js exists:", jsOk);
+
+// We require index.html for the dashboard to load
+if (indexOk) return { dir, indexFile };
+}
+
+return null;
+}
+
+const adminUi = resolveAdminUi();
+
+if (adminUi) {
+console.log("✅ Admin UI directory selected:", adminUi.dir);
+
+// IMPORTANT: protect BOTH the HTML and static assets with Basic Auth
+app.use("/admin", requireAdminLogin, express.static(adminUi.dir));
+
+// Ensure /admin and /admin/ always return index.html
 app.get(["/admin", "/admin/"], requireAdminLogin, (req, res) => {
-return res.sendFile(adminIndex);
+return res.sendFile(adminUi.indexFile);
 });
 } else {
-console.warn("⚠️ Admin UI not found on server. Expected:", adminIndex, adminJs);
+console.warn("⚠️ Admin UI not found on server.");
 app.get(["/admin", "/admin/"], (req, res) => {
 return res.status(404).send("Admin UI not found");
 });
@@ -239,7 +257,7 @@ return res.status(400).json({ ok: false, error: err.message });
 });
 
 // ------------------------------
-// ✅ COURIER API (STORE IN DB)
+// ✅ COURIER API
 // ------------------------------
 app.post("/api/courier", (req, res) => {
 try {
@@ -268,7 +286,7 @@ return res.status(400).json({ ok: false, error: err.message });
 });
 
 // ------------------------------
-// ✅ ADMIN API endpoints used by admin.js (LOCKED)
+// ✅ ADMIN API endpoints (LOCKED)
 // ------------------------------
 app.get("/api/admin/waitlist", requireAdminKey, (req, res) => {
 db.all(
@@ -292,8 +310,8 @@ return res.json({ ok: true, items: rows });
 );
 });
 
-// 📁 FALLBACK (regex for Express 5 safety)
-app.all(/.*/, (req, res) => {
+// 📁 FALLBACK
+app.get("*", (req, res) => {
 return res.status(404).send("Not Found");
 });
 
