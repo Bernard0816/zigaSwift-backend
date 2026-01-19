@@ -127,12 +127,11 @@ res.json({ ok: true });
 
 // ------------------------------
 // 🔐 ADMIN API AUTH (x-admin-key)
-// ENV: ADMIN_KEY
 // ------------------------------
 function requireAdminKey(req, res, next) {
 const expected = (process.env.ADMIN_KEY || "").trim();
 
-// Safer: if not set, DO NOT allow admin endpoints
+// Safer: if ADMIN_KEY not set, lock down admin API
 if (!expected) {
 return res.status(500).json({ ok: false, error: "ADMIN_KEY not set on server" });
 }
@@ -151,17 +150,20 @@ function requireAdminLogin(req, res, next) {
 const user = (process.env.ADMIN_USER || "").trim();
 const pass = (process.env.ADMIN_PASS || "").trim();
 
+// If not set, block (safer)
 if (!user || !pass) {
 return res.status(500).send("Admin UI not configured (set ADMIN_USER and ADMIN_PASS)");
 }
 
-const header = req.headers.authorization || "";
-if (!header.startsWith("Basic ")) {
+const auth = req.headers.authorization || "";
+const [type, encoded] = auth.split(" ");
+
+if (type !== "Basic" || !encoded) {
 res.setHeader("WWW-Authenticate", 'Basic realm="ZigaSwift Admin"');
 return res.status(401).send("Authentication required");
 }
 
-const decoded = Buffer.from(header.slice(6), "base64").toString("utf8");
+const decoded = Buffer.from(encoded, "base64").toString("utf8");
 const sep = decoded.indexOf(":");
 const u = sep >= 0 ? decoded.slice(0, sep) : "";
 const p = sep >= 0 ? decoded.slice(sep + 1) : "";
@@ -173,42 +175,25 @@ return res.status(401).send("Invalid credentials");
 }
 
 // ------------------------------
-// ✅ ADMIN UI (STATIC + LOGIN) — FIXED PATH
-// Your repo has: admin/admin/index.html and admin/admin/admin.js
-// So we MUST serve: <project>/admin/admin as the static root
+// ✅ ADMIN UI (STATIC + LOGIN)
+// IMPORTANT: serve from /admin/admin (your repo path)
 // ------------------------------
-function pickAdminDir() {
-const candidates = [
-path.resolve(__dirname, "admin", "admin"), // ✅ correct for your structure
-path.resolve(__dirname, "admin"), // fallback
-];
+const adminDir = path.resolve(__dirname, "admin", "admin");
+const adminIndex = path.join(adminDir, "index.html");
 
-for (const dir of candidates) {
-const indexFile = path.join(dir, "index.html");
-const jsFile = path.join(dir, "admin.js");
-if (fs.existsSync(indexFile) && fs.existsSync(jsFile)) return dir;
-}
-return null;
-}
-
-const adminDir = pickAdminDir();
-
-if (adminDir) {
+if (fs.existsSync(adminIndex)) {
 console.log("✅ Admin directory:", adminDir);
 console.log("✅ Admin dir files:", fs.readdirSync(adminDir));
 
-// IMPORTANT: protect everything under /admin with Basic Auth
-app.use("/admin", requireAdminLogin);
+// Protect everything under /admin
+app.use("/admin", requireAdminLogin, express.static(adminDir, { index: false }));
 
-// Serve static files from the correct adminDir
-app.use("/admin", express.static(adminDir, { extensions: ["html"] }));
-
-// Make sure /admin and /admin/ return index.html
-app.get(["/admin", "/admin/"], (req, res) => {
-return res.sendFile(path.join(adminDir, "index.html"));
+// Serve index for /admin and /admin/
+app.get(["/admin", "/admin/"], requireAdminLogin, (req, res) => {
+return res.sendFile(adminIndex);
 });
 } else {
-console.warn("⚠️ Admin UI directory not found. Expected admin/admin with index.html + admin.js");
+console.warn("⚠️ Admin UI directory not found at:", adminIndex);
 app.get(["/admin", "/admin/"], (req, res) => {
 return res.status(404).send("Admin UI not found");
 });
@@ -251,7 +236,7 @@ return res.status(400).json({ ok: false, error: err.message });
 });
 
 // ------------------------------
-// ✅ COURIER API (STORE IN DB)
+// ✅ COURIER API
 // ------------------------------
 app.post("/api/courier", (req, res) => {
 try {
@@ -280,7 +265,7 @@ return res.status(400).json({ ok: false, error: err.message });
 });
 
 // ------------------------------
-// ✅ ADMIN API endpoints used by admin.js (LOCKED)
+// ✅ ADMIN API endpoints (LOCKED)
 // ------------------------------
 app.get("/api/admin/waitlist", requireAdminKey, (req, res) => {
 db.all(
