@@ -166,23 +166,52 @@ return res.status(401).send("Invalid credentials");
 }
 
 // ------------------------------
-// ✅ ADMIN UI (STATIC + LOGIN) — FIXED PATH
+// ✅ ADMIN UI (STATIC + LOGIN)
 // ------------------------------
-const adminDir = path.resolve(__dirname, "admin", "admin");
-const adminIndex = path.join(adminDir, "index.html");
+function pickAdminDir() {
+// add ALL possible locations we may have used
+const candidates = [
+path.join(__dirname, "admin"),
+path.join(__dirname, "admin", "admin"),
+path.join(__dirname, "admin", "admin", "admin"),
+];
 
-if (!fs.existsSync(adminIndex)) {
-console.error("❌ Admin UI missing. Expected:", adminIndex);
+for (const dir of candidates) {
+const indexFile = path.join(dir, "index.html");
+if (fs.existsSync(indexFile)) return dir;
+}
+return null;
 }
 
-// Protect ALL admin assets (index.html, admin.js, css, etc.)
-app.use("/admin", requireAdminLogin, express.static(adminDir, { index: false }));
+const adminDir = pickAdminDir();
 
-// /admin and /admin/ should return the index.html
+if (adminDir) {
+console.log("✅ Admin directory FOUND:", adminDir);
+console.log("✅ Files:", fs.readdirSync(adminDir));
+
+// Protect the admin UI with Basic Auth
+app.use("/admin", requireAdminLogin, express.static(adminDir));
+
+// Make sure /admin returns index.html
 app.get(["/admin", "/admin/"], requireAdminLogin, (req, res) => {
-if (!fs.existsSync(adminIndex)) return res.status(404).send("Admin UI not found");
-return res.sendFile(adminIndex);
+return res.sendFile(path.join(adminDir, "index.html"));
 });
+} else {
+console.log("❌ Admin directory NOT FOUND.");
+console.log("📌 __dirname:", __dirname);
+try {
+console.log("📌 root files:", fs.readdirSync(__dirname));
+if (fs.existsSync(path.join(__dirname, "admin"))) {
+console.log("📌 admin folder files:", fs.readdirSync(path.join(__dirname, "admin")));
+}
+} catch (e) {
+console.log("debug readDir error:", e.message);
+}
+
+app.get(["/admin", "/admin/"], (req, res) => {
+return res.status(404).send("Admin UI not found");
+});
+}
 
 // ------------------------------
 // ✅ WAITLIST API
