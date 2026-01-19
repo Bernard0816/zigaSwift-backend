@@ -3,6 +3,43 @@
 
 console.log("✅ admin.js loaded");
 
+window.addEventListener("DOMContentLoaded", () => {
+const saveBtn = document.getElementById("saveBtn");
+const testBtn = document.getElementById("testBtn");
+const apiBase = document.getElementById("apiBase");
+const adminKey = document.getElementById("adminKey");
+const settingsMsg = document.getElementById("settingsMsg");
+const apiBaseLabel = document.getElementById("apiBaseLabel");
+
+console.log("saveBtn:", saveBtn, "testBtn:", testBtn, "apiBase:", apiBase, "adminKey:", adminKey);
+
+if (!saveBtn || !testBtn || !apiBase || !adminKey) {
+if (settingsMsg) settingsMsg.textContent = "❌ Admin UI IDs mismatch. Check index.html element ids.";
+return;
+}
+
+saveBtn.addEventListener("click", () => {
+const api = (apiBase.value || DEFAULT_API_BASE).trim().replace(/\/$/, "");
+const key = (adminKey.value || "").trim();
+localStorage.setItem("ZS_ADMIN_API_BASE", api);
+localStorage.setItem("ZS_ADMIN_KEY", key);
+if (apiBaseLabel) apiBaseLabel.textContent = api;
+if (settingsMsg) settingsMsg.textContent = "✅ Saved.";
+console.log("✅ Saved config:", { api, key });
+});
+
+testBtn.addEventListener("click", async () => {
+try {
+const api = (localStorage.getItem("ZS_ADMIN_API_BASE") || DEFAULT_API_BASE).trim().replace(/\/$/, "");
+const res = await fetch(`${api}/api/health`);
+if (!res.ok) throw new Error(`Health check failed (${res.status})`);
+if (settingsMsg) settingsMsg.textContent = "✅ API is reachable.";
+} catch (e) {
+if (settingsMsg) settingsMsg.textContent = `❌ ${e.message}`;
+}
+});
+});
+
 const DEFAULT_API_BASE = "https://zigaswift-backend.onrender.com";
 
 function setMsg(el, text, type = "") {
