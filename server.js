@@ -29,6 +29,7 @@ const allowedOrigins = new Set([
 "https://bernard0816.github.io",
 "https://bernard0816.github.io/ZigaSwift",
 "https://bernard0816.github.io/ZigaSwift/",
+"https://zigaswift-backend.onrenderder.com", // (typo safe if ever used)
 "https://zigaswift-backend.onrender.com",
 "https://zigaswift-backend-1.onrender.com",
 ]);
@@ -45,9 +46,11 @@ allowedHeaders: ["Content-Type", "x-admin-key"],
 optionsSuccessStatus: 204,
 })
 );
-app.options("*", cors());
 
-// 🚦 RATE LIMIT (general)
+// ✅ IMPORTANT: use regex for OPTIONS to avoid Express 5 "*" crashes
+app.options(/.*/, cors());
+
+// 🚦 RATE LIMIT
 app.use(
 rateLimit({
 windowMs: 15 * 60 * 1000,
@@ -126,21 +129,25 @@ res.json({ ok: true });
 });
 
 // ------------------------------
-// 🔐 ADMIN API AUTH (x-admin-key) — REQUIRED
+// 🔐 ADMIN API AUTH (x-admin-key)
 // ------------------------------
 function requireAdminKey(req, res, next) {
 const expected = (process.env.ADMIN_KEY || "").trim();
+
+// If ADMIN_KEY not set, lock down the admin API
 if (!expected) {
 return res.status(500).json({ ok: false, error: "ADMIN_KEY not set on server" });
 }
+
 const got = (req.header("x-admin-key") || "").trim();
 if (got && got === expected) return next();
+
 return res.status(401).json({ ok: false, error: "Unauthorized" });
 }
 
 // ------------------------------
-// 🔐 ADMIN UI LOCK (Basic Auth)
-// Set env vars: ADMIN_USER, ADMIN_PASS
+// 🔐 ADMIN UI BASIC AUTH (LOGIN PROMPT)
+// Env vars required: ADMIN_USER, ADMIN_PASS
 // ------------------------------
 function requireAdminLogin(req, res, next) {
 const user = (process.env.ADMIN_USER || "").trim();
@@ -150,64 +157,46 @@ if (!user || !pass) {
 return res.status(500).send("Admin UI not configured (set ADMIN_USER and ADMIN_PASS)");
 }
 
-const header = req.headers.authorization || "";
-if (!header.startsWith("Basic ")) {
-res.setHeader("WWW-Authenticate", 'Basic realm="ZigaSwift Admin"');
+const auth = req.headers.authorization || "";
+const [type, encoded] = auth.split(" ");
+
+if (type !== "Basic" || !encoded) {
+res.set("WWW-Authenticate", 'Basic realm="ZigaSwift Admin"');
 return res.status(401).send("Authentication required");
 }
 
-const decoded = Buffer.from(header.slice(6), "base64").toString("utf8");
+const decoded = Buffer.from(encoded, "base64").toString("utf8");
 const [u, p] = decoded.split(":");
 
 if (u === user && p === pass) return next();
 
-res.setHeader("WWW-Authenticate", 'Basic realm="ZigaSwift Admin"');
+res.set("WWW-Authenticate", 'Basic realm="ZigaSwift Admin"');
 return res.status(401).send("Invalid credentials");
 }
 
 // ------------------------------
-// ✅ ADMIN UI (STATIC + LOGIN)
+// ✅ ADMIN UI (STATIC)
+// Your repo structure shows: admin/admin/index.html + admin/admin/admin.js
+// So we pin the static dir to that.
 // ------------------------------
-function pickAdminDir() {
-// add ALL possible locations we may have used
-const candidates = [
-path.join(__dirname, "admin"),
-path.join(__dirname, "admin", "admin"),
-path.join(__dirname, "admin", "admin", "admin"),
-];
+const adminDir = path.resolve(__dirname, "admin", "admin");
+const adminIndex = path.join(adminDir, "index.html");
+const adminJs = path.join(adminDir, "admin.js");
 
-for (const dir of candidates) {
-const indexFile = path.join(dir, "index.html");
-if (fs.existsSync(indexFile)) return dir;
-}
-return null;
-}
+console.log("🧭 AdminDir:", adminDir);
+console.log("🧭 Admin index exists?", fs.existsSync(adminIndex));
+console.log("🧭 Admin js exists?", fs.existsSync(adminJs));
 
-const adminDir = pickAdminDir();
-
-if (adminDir) {
-console.log("✅ Admin directory FOUND:", adminDir);
-console.log("✅ Files:", fs.readdirSync(adminDir));
-
-// Protect the admin UI with Basic Auth
+if (fs.existsSync(adminIndex) && fs.existsSync(adminJs)) {
+// Serve the admin UI + assets under /admin (protected by Basic Auth)
 app.use("/admin", requireAdminLogin, express.static(adminDir));
 
-// Make sure /admin returns index.html
+// Make sure /admin and /admin/ always load index.html
 app.get(["/admin", "/admin/"], requireAdminLogin, (req, res) => {
-return res.sendFile(path.join(adminDir, "index.html"));
+return res.sendFile(adminIndex);
 });
 } else {
-console.log("❌ Admin directory NOT FOUND.");
-console.log("📌 __dirname:", __dirname);
-try {
-console.log("📌 root files:", fs.readdirSync(__dirname));
-if (fs.existsSync(path.join(__dirname, "admin"))) {
-console.log("📌 admin folder files:", fs.readdirSync(path.join(__dirname, "admin")));
-}
-} catch (e) {
-console.log("debug readDir error:", e.message);
-}
-
+console.warn("⚠️ Admin UI not found on server. Expected:", adminIndex, adminJs);
 app.get(["/admin", "/admin/"], (req, res) => {
 return res.status(404).send("Admin UI not found");
 });
@@ -279,7 +268,7 @@ return res.status(400).json({ ok: false, error: err.message });
 });
 
 // ------------------------------
-// ✅ ADMIN API endpoints (LOCKED by ADMIN_KEY)
+// ✅ ADMIN API endpoints used by admin.js (LOCKED)
 // ------------------------------
 app.get("/api/admin/waitlist", requireAdminKey, (req, res) => {
 db.all(
@@ -303,14 +292,12 @@ return res.json({ ok: true, items: rows });
 );
 });
 
-// 📁 FALLBACK
-app.get("*", (req, res) => {
+// 📁 FALLBACK (regex for Express 5 safety)
+app.all(/.*/, (req, res) => {
 return res.status(404).send("Not Found");
 });
 
 // 🚀 START SERVER
 app.listen(PORT, () => {
 console.log(`ZigaSwift backend running on ${SITE_URL} (PORT ${PORT})`);
-console.log("✅ Admin UI folder:", adminDir);
-console.log("✅ Admin UI index exists:", fs.existsSync(adminIndex));
 });
