@@ -21,6 +21,7 @@ courierBody: document.getElementById("courierBody"),
 };
 
 function setMsg(el, text, type = "") {
+if (!el) return;
 el.textContent = text || "";
 el.className = "msg" + (type ? " " + type : "");
 }
@@ -49,26 +50,13 @@ const res = await fetch(url, { headers });
 const text = await res.text();
 
 let data;
-try {
-data = JSON.parse(text);
-} catch {
-data = { raw: text };
-}
+try { data = JSON.parse(text); }
+catch { data = { raw: text }; }
 
 if (!res.ok) {
-// Clearer admin auth errors
-if (res.status === 401) {
-throw new Error(
-adminKey
-? "Admin key rejected (401). Paste the correct ADMIN_KEY and click Save."
-: "Admin key required (401). Paste ADMIN_KEY and click Save."
-);
-}
-
 const msg = data?.error || data?.message || `Request failed (${res.status})`;
 throw new Error(msg);
 }
-
 return data;
 }
 
@@ -102,59 +90,39 @@ setMsg(els.waitlistMsg, "Loading waitlist…");
 try {
 const data = await getJSON("/api/admin/waitlist");
 renderRows(els.waitlistBody, data.items, ["id", "name", "email", "city", "created_at"]);
-setMsg(els.waitlistMsg, `Loaded ${data.items?.length ?? 0} waitlist records.`, "ok");
+setMsg(els.waitlistMsg, `Loaded ${data.items?.length ?? 0} records.`, "ok");
 } catch (e) {
 setMsg(els.waitlistMsg, `❌ ${e.message}`, "bad");
 }
 }
 
 async function loadCouriers() {
-setMsg(els.courierMsg, "Loading courier applications…");
+setMsg(els.courierMsg, "Loading couriers…");
 try {
 const data = await getJSON("/api/admin/couriers");
 renderRows(els.courierBody, data.items, ["id", "name", "email", "route", "created_at"]);
-setMsg(els.courierMsg, `Loaded ${data.items?.length ?? 0} courier applications.`, "ok");
+setMsg(els.courierMsg, `Loaded ${data.items?.length ?? 0} records.`, "ok");
 } catch (e) {
 setMsg(els.courierMsg, `❌ ${e.message}`, "bad");
 }
 }
 
-// UPDATED: Test API now validates the admin key too
 async function testAPI() {
 setMsg(els.settingsMsg, "Testing API…");
 try {
-const { apiBase, adminKey } = getConfig();
-
-// 1) Basic health check
-const healthRes = await fetch(`${apiBase}/api/health`);
-if (!healthRes.ok) throw new Error(`Health check failed (${healthRes.status})`);
-
-// 2) Admin auth check (validates x-admin-key)
-const headers = {};
-if (adminKey) headers["x-admin-key"] = adminKey;
-
-const adminRes = await fetch(`${apiBase}/api/admin/waitlist`, { headers });
-
-if (adminRes.status === 401) {
-throw new Error(
-adminKey
-? "Admin key rejected (401 Unauthorized). Paste the correct ADMIN_KEY and click Save."
-: "Admin key required (401 Unauthorized). Paste ADMIN_KEY and click Save."
-);
-}
-
-if (!adminRes.ok) {
-throw new Error(`Admin endpoint failed (${adminRes.status})`);
-}
-
-setMsg(els.settingsMsg, "✅ API reachable + Admin key OK.", "ok");
+const { apiBase } = getConfig();
+const res = await fetch(`${apiBase}/api/health`);
+if (!res.ok) throw new Error(`Health check failed (${res.status})`);
+setMsg(els.settingsMsg, "✅ API is reachable.", "ok");
 } catch (e) {
 setMsg(els.settingsMsg, `❌ ${e.message}`, "bad");
 }
 }
 
-// Init
-(function init() {
+// INIT AFTER DOM LOAD
+document.addEventListener("DOMContentLoaded", () => {
+console.log("✅ DOM loaded");
+
 const { apiBase, adminKey } = getConfig();
 els.apiBase.value = apiBase;
 els.adminKey.value = adminKey;
@@ -163,17 +131,19 @@ els.apiBaseLabel.textContent = apiBase;
 els.saveBtn.addEventListener("click", () => {
 const api = els.apiBase.value.trim().replace(/\/$/, "") || DEFAULT_API_BASE;
 const key = els.adminKey.value.trim();
+
 saveConfig(api, key);
+
 els.apiBaseLabel.textContent = api;
-setMsg(els.settingsMsg, "✅ Saved.", "ok");
+setMsg(els.settingsMsg, "✅ Saved successfully.", "ok");
+
+console.log("Saved:", api, key);
 });
 
 els.testBtn.addEventListener("click", testAPI);
-
 els.refreshWaitlist.addEventListener("click", loadWaitlist);
 els.refreshCouriers.addEventListener("click", loadCouriers);
 
-// Try loading immediately
 loadWaitlist();
 loadCouriers();
-})();
+});
