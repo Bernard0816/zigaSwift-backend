@@ -32,8 +32,8 @@ return { apiBase, adminKey };
 }
 
 function saveConfig(apiBase, adminKey) {
-localStorage.setItem("ZS_ADMIN_API_BASE", apiBase.trim());
-localStorage.setItem("ZS_ADMIN_KEY", adminKey.trim());
+localStorage.setItem("ZS_ADMIN_API_BASE", apiBase);
+localStorage.setItem("ZS_ADMIN_KEY", adminKey);
 }
 
 async function getJSON(path) {
@@ -159,11 +159,17 @@ els.adminKey.value = adminKey;
 els.apiBaseLabel.textContent = apiBase;
 
 els.saveBtn.addEventListener("click", () => {
-const api = els.apiBase.value.trim().replace(/\/$/, "") || DEFAULT_API_BASE;
+let api = els.apiBase.value.trim().replace(/\/$/, "");
+if (!api) api = DEFAULT_API_BASE;
 const key = els.adminKey.value.trim();
 saveConfig(api, key);
+els.apiBase.value = api;
+els.adminKey.value = key;
 els.apiBaseLabel.textContent = api;
 setMsg(els.settingsMsg, "✅ Saved.", "ok");
+// Reload data with new config
+loadWaitlist();
+loadCouriers();
 });
 
 els.testBtn.addEventListener("click", testAPI);
