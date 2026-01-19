@@ -1,6 +1,8 @@
 // ZigaSwift Admin Dashboard (static)
 // Stores API base + optional admin key in localStorage
 
+console.log("✅ admin.js loaded");
+
 const DEFAULT_API_BASE = "https://zigaswift-backend.onrender.com";
 
 const els = {
