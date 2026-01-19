@@ -43,7 +43,13 @@ const url = `${apiBase}${path}`;
 const headers = { "Content-Type": "application/json" };
 if (adminKey) headers["x-admin-key"] = adminKey;
 
-const res = await fetch(url, { headers });
+let res;
+try {
+res = await fetch(url, { headers });
+} catch (e) {
+throw new Error("Network error: " + e.message);
+}
+
 const text = await res.text();
 
 let data;
@@ -160,6 +166,9 @@ els.apiBaseLabel.textContent = apiBase;
 
 els.saveBtn.addEventListener("click", () => {
 let api = els.apiBase.value.trim().replace(/\/$/, "");
+if (!api.startsWith("http://") && !api.startsWith("https://")) {
+api = "https://" + api;
+}
 if (!api) api = DEFAULT_API_BASE;
 const key = els.adminKey.value.trim();
 saveConfig(api, key);
