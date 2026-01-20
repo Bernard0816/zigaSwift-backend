@@ -31,10 +31,12 @@ const allowedOrigins = new Set([
 "https://bernard0816.github.io/ZigaSwift/",
 "https://zigaswift-backend.onrender.com",
 "https://zigaswift-backend-1.onrender.com",
+
+// ✅ Render Static Site (your admin UI)
+"https://zigaswift-backend-2.onrender.com",
 ]);
 
-app.use(
-cors({
+const corsOptions = {
 origin: (origin, cb) => {
 if (!origin) return cb(null, true); // allow curl/postman
 if (allowedOrigins.has(origin)) return cb(null, true);
@@ -43,10 +45,12 @@ return cb(new Error("CORS blocked: " + origin));
 methods: ["GET", "POST", "OPTIONS"],
 allowedHeaders: ["Content-Type", "x-admin-key"],
 optionsSuccessStatus: 204,
-})
-);
-app.options("*", cors());
+};
 
+app.use(cors(corsOptions));
+
+// ✅ IMPORTANT: preflight must use SAME options
+app.options("*", cors(corsOptions));
 // 🚦 RATE LIMIT
 app.use(
 rateLimit({
