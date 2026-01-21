@@ -1,4 +1,6 @@
 // server.js (FULL — copy/paste)
+// Includes: ✅ admin email notifications (ADMIN_NOTIFY_EMAIL)
+
 require("dotenv").config();
 
 const express = require("express");
@@ -19,6 +21,9 @@ app.set("trust proxy", 1);
 // 🌐 ENV
 const PORT = process.env.PORT || 10000;
 const SITE_URL = process.env.SITE_URL || `http://localhost:${PORT}`;
+
+// ✅ NEW: Admin notification email (set on Render env vars)
+const ADMIN_NOTIFY_EMAIL = (process.env.ADMIN_NOTIFY_EMAIL || "").trim();
 
 // 🛡️ SECURITY
 app.use(helmet());
@@ -51,6 +56,7 @@ app.use(cors(corsOptions));
 
 // ✅ IMPORTANT: preflight must use SAME options
 app.options("*", cors(corsOptions));
+
 // 🚦 RATE LIMIT
 app.use(
 rateLimit({
@@ -116,9 +122,12 @@ console.warn("⚠️ Email not configured (skipping send).");
 return;
 }
 
-transporter.sendMail({ from: process.env.MAIL_FROM, to, subject, html }, (err) => {
+transporter.sendMail(
+{ from: process.env.MAIL_FROM, to, subject, html },
+(err) => {
 if (err) console.warn("⚠️ Email send failed:", err.message);
-});
+}
+);
 }
 
 // ✅ HEALTH CHECK
@@ -137,7 +146,9 @@ const expected = (process.env.ADMIN_KEY || "").trim();
 
 // Safer: if ADMIN_KEY not set, lock it down
 if (!expected) {
-return res.status(500).json({ ok: false, error: "ADMIN_KEY not set on server" });
+return res
+.status(500)
+.json({ ok: false, error: "ADMIN_KEY not set on server" });
 }
 
 const got = (req.header("x-admin-key") || "").trim();
@@ -156,7 +167,9 @@ const pass = (process.env.ADMIN_PASS || "").trim();
 
 // If not set, block (safer)
 if (!user || !pass) {
-return res.status(500).send("Admin UI not configured (set ADMIN_USER and ADMIN_PASS)");
+return res
+.status(500)
+.send("Admin UI not configured (set ADMIN_USER and ADMIN_PASS)");
 }
 
 const header = req.headers.authorization || "";
@@ -240,7 +253,7 @@ return res.status(404).send("Admin UI not found");
 }
 
 // ------------------------------
-// ✅ WAITLIST API
+// ✅ WAITLIST API (+ admin email notify)
 // ------------------------------
 app.post("/api/waitlist", (req, res) => {
 try {
@@ -261,11 +274,28 @@ console.error("❌ Waitlist insert failed:", err.message);
 return res.status(500).json({ ok: false, error: "Database error" });
 }
 
+// ✅ email user
 sendMailSafe({
 to: data.email,
 subject: "Welcome to ZigaSwift 🚀",
 html: `<p>Hi ${data.name}, thanks for joining the ZigaSwift waitlist!</p>`,
 });
+
+// ✅ NEW: email admin
+if (ADMIN_NOTIFY_EMAIL) {
+sendMailSafe({
+to: ADMIN_NOTIFY_EMAIL,
+subject: "🟢 New Waitlist Signup — ZigaSwift",
+html: `
+<h3>New Waitlist Signup</h3>
+<p><b>Name:</b> ${data.name}</p>
+<p><b>Email:</b> ${data.email}</p>
+<p><b>City:</b> ${data.city}</p>
+<p><b>ID:</b> ${this.lastID}</p>
+<p><b>Time:</b> ${new Date().toISOString()}</p>
+`,
+});
+}
 
 return res.json({ ok: true, id: this.lastID });
 }
@@ -276,7 +306,7 @@ return res.status(400).json({ ok: false, error: err.message });
 });
 
 // ------------------------------
-// ✅ COURIER API (STORE IN DB)
+// ✅ COURIER API (STORE IN DB) (+ admin email notify)
 // ------------------------------
 app.post("/api/courier", (req, res) => {
 try {
@@ -296,6 +326,23 @@ if (err) {
 console.error("❌ Courier insert failed:", err.message);
 return res.status(500).json({ ok: false, error: "Database error" });
 }
+
+// ✅ NEW: email admin
+if (ADMIN_NOTIFY_EMAIL) {
+sendMailSafe({
+to: ADMIN_NOTIFY_EMAIL,
+subject: "🟣 New Courier Application — ZigaSwift",
+html: `
+<h3>New Courier Application</h3>
+<p><b>Name:</b> ${data.name}</p>
+<p><b>Email:</b> ${data.email}</p>
+<p><b>Route:</b> ${data.route}</p>
+<p><b>ID:</b> ${this.lastID}</p>
+<p><b>Time:</b> ${new Date().toISOString()}</p>
+`,
+});
+}
+
 return res.json({ ok: true, id: this.lastID });
 }
 );
@@ -337,4 +384,6 @@ return res.status(404).send("Not Found");
 // 🚀 START SERVER
 app.listen(PORT, () => {
 console.log(`ZigaSwift backend running on ${SITE_URL} (PORT ${PORT})`);
+if (ADMIN_NOTIFY_EMAIL) console.log("✅ Admin notify email enabled:", ADMIN_NOTIFY_EMAIL);
+else console.log("ℹ️ Admin notify email disabled (set ADMIN_NOTIFY_EMAIL to enable).");
 });
