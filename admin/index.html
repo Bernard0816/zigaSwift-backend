@@ -4,36 +4,143 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ZigaSwift Admin</title>
+
 <style>
-:root{--bg:#0b1220;--card:#121a2c;--text:#e7eefc;--muted:#9ab0d6;--line:#22304f;--ok:#3ddc97;--bad:#ff6b6b;--btn:#2b76ff}
+:root{
+--bg:#0b1220;
+--card:#121a2c;
+--text:#e7eefc;
+--muted:#9ab0d6;
+--line:#22304f;
+--ok:#3ddc97;
+--bad:#ff6b6b;
+--btn:#2b76ff;
+
+/* ✅ action button colors */
+--accept:#22c55e;
+--reject:#f59e0b;
+--delete:#ef4444;
+}
+
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#070b13,#0b1220);color:var(--text)}
-header{padding:18px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,18,32,.92);backdrop-filter:blur(8px)}
+body{
+margin:0;
+font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+background:linear-gradient(180deg,#070b13,#0b1220);
+color:var(--text)
+}
+
+header{
+padding:18px 16px;
+border-bottom:1px solid var(--line);
+position:sticky;
+top:0;
+background:rgba(11,18,32,.92);
+backdrop-filter:blur(8px)
+}
+
 .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
 h1{margin:0;font-size:18px;letter-spacing:.2px}
 .sub{color:var(--muted);font-size:13px;margin-top:6px}
 .grid{display:grid;grid-template-columns:1fr;gap:14px;padding:16px 0 26px}
-.card{background:rgba(18,26,44,.9);border:1px solid var(--line);border-radius:14px;padding:14px}
+
+.card{
+background:rgba(18,26,44,.9);
+border:1px solid var(--line);
+border-radius:14px;
+padding:14px
+}
+
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:12px}
-input{width:100%;max-width:360px;background:#0e1628;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;outline:none}
-button{background:var(--btn);color:white;border:0;border-radius:10px;padding:10px 12px;font-weight:600;cursor:pointer;transition: opacity 0.2s}
-button:hover{opacity:0.9}
-button:active{opacity:0.7}
-button.secondary{background:#1a2742;border:1px solid var(--line);color:var(--text);transition: background 0.2s}
+
+input{
+width:100%;
+max-width:360px;
+background:#0e1628;
+border:1px solid var(--line);
+border-radius:10px;
+color:var(--text);
+padding:10px 12px;
+outline:none
+}
+
+button{
+background:var(--btn);
+color:white;
+border:0;
+border-radius:10px;
+padding:10px 12px;
+font-weight:600;
+cursor:pointer;
+transition: opacity 0.2s, transform 0.05s, background 0.2s, border-color 0.2s
+}
+button:hover{opacity:0.92}
+button:active{opacity:0.75; transform: translateY(1px)}
+
+button.secondary{
+background:#1a2742;
+border:1px solid var(--line);
+color:var(--text)
+}
 button.secondary:hover{background:#22304f}
 button.secondary:active{background:#1a2742}
+
 .msg{margin-top:10px;font-size:13px;color:var(--muted)}
 .msg.ok{color:var(--ok)}
 .msg.bad{color:var(--bad)}
+
 table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;font-size:13px;vertical-align:top}
+th,td{
+border-bottom:1px solid var(--line);
+padding:10px 8px;
+text-align:left;
+font-size:13px;
+vertical-align:top
+}
 th{color:var(--muted);font-weight:600}
 .right{margin-left:auto}
 .small{font-size:12px;color:var(--muted)}
 code{background:#0e1628;border:1px solid var(--line);padding:2px 6px;border-radius:8px;color:#cfe0ff}
+
+/* ✅ NEW: Actions column layout */
+.actions{
+display:flex;
+gap:8px;
+align-items:center;
+flex-wrap:wrap;
+}
+
+/* ✅ NEW: compact buttons for table actions */
+.btn-sm{
+padding:6px 10px;
+border-radius:9px;
+font-size:12px;
+font-weight:700;
+line-height:1;
+border:1px solid transparent;
+}
+
+/* ✅ NEW: specific action colors */
+.btn-accept{background:rgba(34,197,94,.18); border-color:rgba(34,197,94,.35); color:#b9f6c8;}
+.btn-accept:hover{background:rgba(34,197,94,.26)}
+.btn-reject{background:rgba(245,158,11,.18); border-color:rgba(245,158,11,.35); color:#ffe0b3;}
+.btn-reject:hover{background:rgba(245,158,11,.26)}
+.btn-delete{background:rgba(239,68,68,.18); border-color:rgba(239,68,68,.35); color:#ffc2c2;}
+.btn-delete:hover{background:rgba(239,68,68,.26)}
+
+/* ✅ NEW: subtle “disabled” look (admin.js can set disabled=true) */
+.btn-sm:disabled{
+opacity:.5;
+cursor:not-allowed;
+transform:none;
+}
+
+/* Optional: make the last column a bit narrower */
+th.actions-col, td.actions-col{width:220px}
 </style>
 </head>
+
 <body>
 <header>
 <div class="wrap">
@@ -51,6 +158,7 @@ code{background:#0e1628;border:1px solid var(--line);padding:2px 6px;border-radi
 
 <main class="wrap">
 <div class="grid">
+
 <section class="card">
 <div class="row">
 <h2 style="margin:0;font-size:16px">Settings</h2>
@@ -87,6 +195,8 @@ code{background:#0e1628;border:1px solid var(--line);padding:2px 6px;border-radi
 <th>Email</th>
 <th>City</th>
 <th>Created</th>
+<!-- ✅ NEW: Actions column -->
+<th class="actions-col">Actions</th>
 </tr>
 </thead>
 <tbody id="waitlistBody"></tbody>
@@ -111,12 +221,15 @@ code{background:#0e1628;border:1px solid var(--line);padding:2px 6px;border-radi
 <th>Email</th>
 <th>Route</th>
 <th>Created</th>
+<!-- ✅ NEW: Actions column -->
+<th class="actions-col">Actions</th>
 </tr>
 </thead>
 <tbody id="courierBody"></tbody>
 </table>
 </div>
 </section>
+
 </div>
 </main>
 
