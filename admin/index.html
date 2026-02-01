@@ -17,6 +17,7 @@
 --accept: #1f9d67;
 --reject: #c86a14;
 --delete: #d64545;
+--pending: #d4a017;
 }
 
 * { box-sizing: border-box; }
@@ -34,61 +35,49 @@ top: 0;
 background: rgba(11,18,32,.92);
 backdrop-filter: blur(8px);
 }
-.wrap {
-max-width: 1100px;
-margin: 0 auto;
-padding: 0 16px;
-}
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
 h1 { margin: 0; font-size: 18px; letter-spacing: .2px; }
 .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
-.grid {
-display: grid;
-grid-template-columns: 1fr;
-gap: 14px;
-padding: 16px 0 26px;
-}
+.grid { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px 0 32px; }
 .card {
 background: rgba(18,26,44,.9);
 border: 1px solid var(--line);
 border-radius: 14px;
-padding: 14px;
+padding: 16px;
 }
-.row {
-display: flex;
-gap: 10px;
-align-items: center;
-flex-wrap: wrap;
-}
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .pill {
-padding: 6px 10px;
+padding: 6px 12px;
 border: 1px solid var(--line);
 border-radius: 999px;
 color: var(--muted);
 font-size: 12px;
 }
-input {
+input, input[type="search"] {
 width: 100%;
-max-width: 360px;
+max-width: 420px;
 background: #0e1628;
 border: 1px solid var(--line);
 border-radius: 10px;
 color: var(--text);
 padding: 10px 12px;
+font-size: 14px;
 outline: none;
 }
+input::placeholder { color: #5a6f9c; }
 
 button {
 background: var(--btn);
 color: white;
 border: 0;
 border-radius: 10px;
-padding: 10px 12px;
+padding: 10px 14px;
 font-weight: 600;
 cursor: pointer;
 transition: opacity .2s;
 }
-button:hover { opacity: .9; }
-button:active { opacity: .7; }
+button:hover { opacity: .92; }
+button:active { opacity: .8; }
 button.secondary {
 background: #1a2742;
 border: 1px solid var(--line);
@@ -103,32 +92,37 @@ button.secondary:hover { background: #22304f; }
 table {
 width: 100%;
 border-collapse: collapse;
-margin-top: 10px;
+margin-top: 8px;
+font-size: 13px;
 }
 th, td {
 border-bottom: 1px solid var(--line);
 padding: 10px 12px;
 text-align: left;
-font-size: 13px;
 vertical-align: middle;
 }
 th { color: var(--muted); font-weight: 600; }
 .right { margin-left: auto; }
-.small { font-size: 12px; color: var(--muted); }
-code {
-background: #0e1628;
-border: 1px solid var(--line);
-padding: 2px 6px;
-border-radius: 8px;
-color: #cfe0ff;
-}
 
-/* ────────────────────────────────────────
-ACTIONS COLUMN IMPROVEMENTS
-───────────────────────────────────────── */
+/* Status badge */
+.status-badge {
+padding: 4px 10px;
+border-radius: 6px;
+font-size: 11.5px;
+font-weight: 600;
+text-align: center;
+min-width: 78px;
+display: inline-block;
+}
+.status-pending { background: rgba(212,160,23,0.22); color: #ffdd77; border: 1px solid rgba(212,160,23,0.5); }
+.status-accepted { background: rgba(31,157,103,0.22); color: #c5f7e0; border: 1px solid rgba(31,157,103,0.5); }
+.status-rejected { background: rgba(214,69,69,0.22); color: #ffd6d6; border: 1px solid rgba(214,69,69,0.5); }
+.status-unknown { background: rgba(100,100,100,0.3); color: #bbb; }
+
+/* Actions */
 .actions-cell {
 padding: 8px 12px !important;
-background: rgba(30, 40, 60, 0.4);
+background: rgba(30,40,60,0.35);
 }
 .actions {
 display: flex;
@@ -136,7 +130,6 @@ flex-wrap: nowrap;
 gap: 8px;
 align-items: center;
 min-width: 240px;
-white-space: nowrap;
 }
 .btn-sm {
 padding: 6px 12px;
@@ -149,29 +142,12 @@ border: 1px solid rgba(255,255,255,.12);
 cursor: pointer;
 transition: all 0.13s;
 }
-.btn-sm:hover {
-filter: brightness(1.15);
-}
-.btn-sm:disabled {
-opacity: 0.5;
-cursor: not-allowed;
-}
+.btn-sm:hover { filter: brightness(1.15); }
+.btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.btn-accept {
-background: rgba(31,157,103,.22);
-color: #c5f7e0;
-border-color: rgba(31,157,103,.45);
-}
-.btn-reject {
-background: rgba(200,106,20,.22);
-color: #ffe8cc;
-border-color: rgba(200,106,20,.45);
-}
-.btn-delete {
-background: rgba(214,69,69,.22);
-color: #ffd6d6;
-border-color: rgba(214,69,69,.45);
-}
+.btn-accept { background: rgba(31,157,103,.22); color: #c5f7e0; border-color: rgba(31,157,103,.45); }
+.btn-reject { background: rgba(200,106,20,.22); color: #ffe8cc; border-color: rgba(200,106,20,.45); }
+.btn-delete { background: rgba(214,69,69,.22); color: #ffd6d6; border-color: rgba(214,69,69,.45); }
 </style>
 </head>
 <body>
@@ -181,7 +157,7 @@ border-color: rgba(214,69,69,.45);
 <div class="row">
 <div>
 <h1>ZigaSwift Admin Dashboard</h1>
-<div class="sub">View Waitlist + Courier Applications</div>
+<div class="sub">Waitlist + Courier Applications</div>
 </div>
 <div class="right row">
 <span class="pill">API: <code id="apiBaseLabel">loading…</code></span>
@@ -193,35 +169,40 @@ border-color: rgba(214,69,69,.45);
 <main class="wrap">
 <div class="grid">
 
+<!-- Settings -->
 <section class="card">
-<div class="row">
-<h2 style="margin:0;font-size:16px">Settings</h2>
-</div>
-
-<div class="row" style="margin-top:10px">
-<label style="flex:1">
+<div class="row"><h2 style="margin:0;font-size:16px">Settings</h2></div>
+<div class="row" style="margin-top:12px; gap:16px;">
+<label style="flex:1;">
 <div class="small">API Base URL</div>
 <input id="apiBase" placeholder="https://zigaswift-backend.onrender.com" />
 </label>
-
-<label style="flex:1;max-width:260px">
+<label style="flex:1; max-width:280px;">
 <div class="small">Admin key</div>
 <input id="adminKey" placeholder="Paste ADMIN_KEY here" />
 </label>
-
+<div style="display:flex; gap:10px;">
 <button id="saveBtn">Save</button>
 <button class="secondary" id="testBtn">Test API</button>
 </div>
-
+</div>
 <div class="msg" id="settingsMsg"></div>
 </section>
 
+<!-- Waitlist -->
 <section class="card">
 <div class="row">
 <h2 style="margin:0;font-size:16px">Waitlist</h2>
 <div class="right row">
 <button class="secondary" id="refreshWaitlist">Refresh</button>
 </div>
+</div>
+
+<div class="row" style="margin:12px 0;">
+<label style="flex:1; max-width:420px;">
+<div class="small">Search (name, email, city, ID)</div>
+<input id="waitlistSearch" type="search" placeholder="Filter..." />
+</label>
 </div>
 
 <div class="msg" id="waitlistMsg"></div>
@@ -235,6 +216,7 @@ border-color: rgba(214,69,69,.45);
 <th>Email</th>
 <th>City</th>
 <th>Created</th>
+<th style="width:110px; text-align:center">Status</th>
 <th style="width:280px; min-width:280px;">Actions</th>
 </tr>
 </thead>
@@ -243,12 +225,20 @@ border-color: rgba(214,69,69,.45);
 </div>
 </section>
 
+<!-- Couriers -->
 <section class="card">
 <div class="row">
 <h2 style="margin:0;font-size:16px">Courier Applications</h2>
 <div class="right row">
 <button class="secondary" id="refreshCouriers">Refresh</button>
 </div>
+</div>
+
+<div class="row" style="margin:12px 0;">
+<label style="flex:1; max-width:420px;">
+<div class="small">Search (name, email, route, ID)</div>
+<input id="courierSearch" type="search" placeholder="Filter..." />
+</label>
 </div>
 
 <div class="msg" id="courierMsg"></div>
@@ -262,6 +252,7 @@ border-color: rgba(214,69,69,.45);
 <th>Email</th>
 <th>Route</th>
 <th>Created</th>
+<th style="width:110px; text-align:center">Status</th>
 <th style="width:280px; min-width:280px;">Actions</th>
 </tr>
 </thead>
@@ -274,7 +265,9 @@ border-color: rgba(214,69,69,.45);
 </main>
 
 <script>
-// admin.js ────────────────────────────────────────────────
+// ────────────────────────────────────────────────
+// ZigaSwift Admin Dashboard – with search + status badges
+// ────────────────────────────────────────────────
 
 const DEFAULT_API_BASE = "https://zigaswift-backend.onrender.com";
 
@@ -291,7 +284,12 @@ waitlistMsg: document.getElementById("waitlistMsg"),
 courierMsg: document.getElementById("courierMsg"),
 waitlistBody: document.getElementById("waitlistBody"),
 courierBody: document.getElementById("courierBody"),
+waitlistSearch: document.getElementById("waitlistSearch"),
+courierSearch: document.getElementById("courierSearch"),
 };
+
+let waitlistFullData = [];
+let couriersFullData = [];
 
 function setMsg(el, text, type = "") {
 el.textContent = text || "";
@@ -299,9 +297,7 @@ el.className = "msg" + (type ? " " + type : "");
 }
 
 function getConfig() {
-const apiBase = (localStorage.getItem("ZS_ADMIN_API_BASE") || DEFAULT_API_BASE)
-.trim()
-.replace(/\/$/, "");
+let apiBase = (localStorage.getItem("ZS_ADMIN_API_BASE") || DEFAULT_API_BASE).trim().replace(/\/$/, '');
 const adminKey = (localStorage.getItem("ZS_ADMIN_KEY") || "").trim();
 return { apiBase, adminKey };
 }
@@ -319,48 +315,62 @@ return headers;
 }
 
 async function requestJSON(method, path) {
-const { apiBase, adminKey } = getConfig();
+const { apiBase } = getConfig();
 const url = `${apiBase}${path}`;
 
 let res;
 try {
-res = await fetch(url, {
-method,
-headers: buildHeaders(),
-});
-} catch (e) {
-throw new Error("Network error: " + e.message);
+res = await fetch(url, { method, headers: buildHeaders() });
+} catch (err) {
+throw new Error(`Network error: ${err.message}`);
 }
 
-const text = await res.text();
 let data;
 try {
-data = JSON.parse(text);
+data = await res.json();
 } catch {
-data = { raw: text };
+throw new Error(`Invalid JSON (status ${res.status})`);
 }
 
 if (!res.ok) {
 if (res.status === 401) {
-throw new Error(
-adminKey
-? "Admin key rejected (401). Paste the correct ADMIN_KEY and click Save."
-: "Admin key required (401). Paste ADMIN_KEY and click Save."
-);
+throw new Error(getConfig().adminKey ? "Admin key rejected (401)" : "Admin key required (401)");
 }
-throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
+throw new Error(data?.error || data?.message || `Failed (${res.status})`);
 }
 
 return data;
 }
 
-function makeBtn(label, className, onClick) {
-const b = document.createElement("button");
-b.type = "button";
-b.className = `btn-sm ${className}`;
-b.textContent = label;
-b.addEventListener("click", onClick);
-return b;
+function makeBtn(label, extraClass, onClick) {
+const btn = document.createElement("button");
+btn.type = "button";
+btn.className = `btn-sm ${extraClass}`;
+btn.textContent = label;
+btn.addEventListener("click", onClick);
+return btn;
+}
+
+function getStatusBadge(status) {
+const s = (status || "pending").toLowerCase();
+let text = "Pending";
+let cls = "status-pending";
+
+if (s === "accepted") {
+text = "Accepted";
+cls = "status-accepted";
+} else if (s === "rejected") {
+text = "Rejected";
+cls = "status-rejected";
+} else if (!["pending","accepted","rejected"].includes(s)) {
+text = "Unknown";
+cls = "status-unknown";
+}
+
+const span = document.createElement("span");
+span.className = `status-badge ${cls}`;
+span.textContent = text;
+return span;
 }
 
 function renderEmptyRow(tbody, colSpan) {
@@ -370,76 +380,52 @@ const td = document.createElement("td");
 td.colSpan = colSpan;
 td.textContent = "No records found.";
 td.style.color = "#9ab0d6";
-td.style.padding = "16px";
+td.style.padding = "20px";
 td.style.textAlign = "center";
 tr.appendChild(td);
 tbody.appendChild(tr);
 }
 
-function renderWaitlistRows(tbody, rows) {
+function renderWaitlistRows(rows) {
+const tbody = els.waitlistBody;
 tbody.innerHTML = "";
 
-if (!Array.isArray(rows) || rows.length === 0) {
-return renderEmptyRow(tbody, 6);
+if (!rows?.length) {
+return renderEmptyRow(tbody, 7);
 }
 
 for (const r of rows) {
 const tr = document.createElement("tr");
 
-// data columns
-["id", "name", "email", "city", "created_at"].forEach(key => {
+["id","name","email","city","created_at"].forEach(k => {
 const td = document.createElement("td");
-td.textContent = r?.[key] ?? "";
+td.textContent = r[k] ?? "";
 tr.appendChild(td);
 });
 
-// actions column
+// Status
+const tdStatus = document.createElement("td");
+tdStatus.style.textAlign = "center";
+tdStatus.appendChild(getStatusBadge(r.status));
+tr.appendChild(tdStatus);
+
+// Actions
 const tdActions = document.createElement("td");
 tdActions.className = "actions-cell";
-
 const wrap = document.createElement("div");
 wrap.className = "actions";
 
 const id = r.id;
 
-const acceptBtn = makeBtn("Accept", "btn-accept", async () => {
-acceptBtn.disabled = true;
-try {
-await requestJSON("PATCH", `/api/admin/waitlist/${id}/accept`);
-await loadWaitlist();
-} catch (e) {
-alert(e.message);
-} finally {
-acceptBtn.disabled = false;
-}
-});
+wrap.append(
+makeBtn("Accept", "btn-accept", async () => { await handleAction(`/api/admin/waitlist/${id}/accept`, els.waitlistSearch); }),
+makeBtn("Reject", "btn-reject", async () => { await handleAction(`/api/admin/waitlist/${id}/reject`, els.waitlistSearch); }),
+makeBtn("Delete", "btn-delete", async () => {
+if (!confirm(`Delete waitlist #${id}?`)) return;
+await handleAction(`/api/admin/waitlist/${id}`, els.waitlistSearch, "DELETE");
+})
+);
 
-const rejectBtn = makeBtn("Reject", "btn-reject", async () => {
-rejectBtn.disabled = true;
-try {
-await requestJSON("PATCH", `/api/admin/waitlist/${id}/reject`);
-await loadWaitlist();
-} catch (e) {
-alert(e.message);
-} finally {
-rejectBtn.disabled = false;
-}
-});
-
-const delBtn = makeBtn("Delete", "btn-delete", async () => {
-if (!confirm(`Delete waitlist record #${id}? This cannot be undone.`)) return;
-delBtn.disabled = true;
-try {
-await requestJSON("DELETE", `/api/admin/waitlist/${id}`);
-await loadWaitlist();
-} catch (e) {
-alert(e.message);
-} finally {
-delBtn.disabled = false;
-}
-});
-
-wrap.append(acceptBtn, rejectBtn, delBtn);
 tdActions.appendChild(wrap);
 tr.appendChild(tdActions);
 
@@ -447,121 +433,147 @@ tbody.appendChild(tr);
 }
 }
 
-function renderCourierRows(tbody, rows) {
+function renderCourierRows(rows) {
+const tbody = els.courierBody;
 tbody.innerHTML = "";
 
-if (!Array.isArray(rows) || rows.length === 0) {
-return renderEmptyRow(tbody, 6);
+if (!rows?.length) {
+return renderEmptyRow(tbody, 7);
 }
 
 for (const r of rows) {
 const tr = document.createElement("tr");
 
-["id", "name", "email", "route", "created_at"].forEach(key => {
+["id","name","email","route","created_at"].forEach(k => {
 const td = document.createElement("td");
-td.textContent = r?.[key] ?? "";
+td.textContent = r[k] ?? "";
 tr.appendChild(td);
 });
 
+// Status
+const tdStatus = document.createElement("td");
+tdStatus.style.textAlign = "center";
+tdStatus.appendChild(getStatusBadge(r.status));
+tr.appendChild(tdStatus);
+
+// Actions
 const tdActions = document.createElement("td");
 tdActions.className = "actions-cell";
-
 const wrap = document.createElement("div");
 wrap.className = "actions";
 
 const id = r.id;
 
-const acceptBtn = makeBtn("Accept", "btn-accept", async () => {
-acceptBtn.disabled = true;
-try {
-await requestJSON("PATCH", `/api/admin/couriers/${id}/accept`);
-await loadCouriers();
-} catch (e) {
-alert(e.message);
-} finally {
-acceptBtn.disabled = false;
-}
-});
+wrap.append(
+makeBtn("Accept", "btn-accept", async () => { await handleAction(`/api/admin/couriers/${id}/accept`, els.courierSearch); }),
+makeBtn("Reject", "btn-reject", async () => { await handleAction(`/api/admin/couriers/${id}/reject`, els.courierSearch); }),
+makeBtn("Delete", "btn-delete", async () => {
+if (!confirm(`Delete courier #${id}?`)) return;
+await handleAction(`/api/admin/couriers/${id}`, els.courierSearch, "DELETE");
+})
+);
 
-const rejectBtn = makeBtn("Reject", "btn-reject", async () => {
-rejectBtn.disabled = true;
-try {
-await requestJSON("PATCH", `/api/admin/couriers/${id}/reject`);
-await loadCouriers();
-} catch (e) {
-alert(e.message);
-} finally {
-rejectBtn.disabled = false;
-}
-});
-
-const delBtn = makeBtn("Delete", "btn-delete", async () => {
-if (!confirm(`Delete courier application #${id}? This cannot be undone.`)) return;
-delBtn.disabled = true;
-try {
-await requestJSON("DELETE", `/api/admin/couriers/${id}`);
-await loadCouriers();
-} catch (e) {
-alert(e.message);
-} finally {
-delBtn.disabled = false;
-}
-});
-
-wrap.append(acceptBtn, rejectBtn, delBtn);
 tdActions.appendChild(wrap);
 tr.appendChild(tdActions);
 
 tbody.appendChild(tr);
+}
+}
+
+async function handleAction(path, searchInput, method = "PATCH") {
+try {
+await requestJSON(method, path);
+if (searchInput) searchInput.value = ""; // optional: clear search after action
+loadWaitlist();
+loadCouriers();
+} catch (err) {
+alert(err.message);
+}
+}
+
+function applyWaitlistFilter() {
+const term = (els.waitlistSearch?.value || "").trim().toLowerCase();
+let filtered = waitlistFullData;
+
+if (term) {
+filtered = waitlistFullData.filter(r =>
+[r.id, r.name, r.email, r.city]
+.map(v => String(v||'').toLowerCase())
+.some(v => v.includes(term))
+);
+}
+
+renderWaitlistRows(filtered);
+
+if (filtered.length === 0 && waitlistFullData.length > 0) {
+setMsg(els.waitlistMsg, `No matches for "${term}"`, "bad");
+} else {
+setMsg(els.waitlistMsg, `Showing ${filtered.length} of ${waitlistFullData.length}`, "ok");
+}
+}
+
+function applyCourierFilter() {
+const term = (els.courierSearch?.value || "").trim().toLowerCase();
+let filtered = couriersFullData;
+
+if (term) {
+filtered = couriersFullData.filter(r =>
+[r.id, r.name, r.email, r.route]
+.map(v => String(v||'').toLowerCase())
+.some(v => v.includes(term))
+);
+}
+
+renderCourierRows(filtered);
+
+if (filtered.length === 0 && couriersFullData.length > 0) {
+setMsg(els.courierMsg, `No matches for "${term}"`, "bad");
+} else {
+setMsg(els.courierMsg, `Showing ${filtered.length} of ${couriersFullData.length}`, "ok");
 }
 }
 
 async function loadWaitlist() {
-setMsg(els.waitlistMsg, "Loading waitlist…");
+setMsg(els.waitlistMsg, "Loading...");
 try {
 const data = await requestJSON("GET", "/api/admin/waitlist");
-renderWaitlistRows(els.waitlistBody, data.items || []);
-setMsg(els.waitlistMsg, `Loaded ${data.items?.length ?? 0} waitlist records.`, "ok");
-} catch (e) {
-setMsg(els.waitlistMsg, `❌ ${e.message}`, "bad");
+waitlistFullData = data.items || data || [];
+applyWaitlistFilter();
+setMsg(els.waitlistMsg, `Loaded ${waitlistFullData.length} records`, "ok");
+} catch (err) {
+setMsg(els.waitlistMsg, `❌ ${err.message}`, "bad");
 }
 }
 
 async function loadCouriers() {
-setMsg(els.courierMsg, "Loading courier applications…");
+setMsg(els.courierMsg, "Loading...");
 try {
 const data = await requestJSON("GET", "/api/admin/couriers");
-renderCourierRows(els.courierBody, data.items || []);
-setMsg(els.courierMsg, `Loaded ${data.items?.length ?? 0} courier applications.`, "ok");
-} catch (e) {
-setMsg(els.courierMsg, `❌ ${e.message}`, "bad");
+couriersFullData = data.items || data || [];
+applyCourierFilter();
+setMsg(els.courierMsg, `Loaded ${couriersFullData.length} records`, "ok");
+} catch (err) {
+setMsg(els.courierMsg, `❌ ${err.message}`, "bad");
 }
 }
 
 async function testAPI() {
-setMsg(els.settingsMsg, "Testing API…");
+setMsg(els.settingsMsg, "Testing...");
 try {
 const { apiBase, adminKey } = getConfig();
+const health = await fetch(`${apiBase}/api/health`);
+if (!health.ok) throw new Error(`Health failed (${health.status})`);
 
-const healthRes = await fetch(`${apiBase}/api/health`);
-if (!healthRes.ok) throw new Error(`Health check failed (${healthRes.status})`);
-
-const headers = {};
-if (adminKey) headers["x-admin-key"] = adminKey;
-
-const adminRes = await fetch(`${apiBase}/api/admin/waitlist`, { headers });
-if (adminRes.status === 401) {
-throw new Error(
-adminKey
-? "Admin key rejected (401 Unauthorized). Paste the correct ADMIN_KEY and click Save."
-: "Admin key required (401 Unauthorized). Paste ADMIN_KEY and click Save."
-);
+const headers = adminKey ? { "x-admin-key": adminKey } : {};
+const adminTest = await fetch(`${apiBase}/api/admin/waitlist`, { headers });
+if (adminTest.status === 401) {
+throw new Error(adminKey ? "Admin key rejected" : "Admin key required");
 }
-if (!adminRes.ok) throw new Error(`Admin endpoint failed (${adminRes.status})`);
+if (!adminTest.ok) throw new Error(`Admin check failed (${adminTest.status})`);
 
-setMsg(els.settingsMsg, "✅ API reachable + Admin key OK.", "ok");
-} catch (e) {
-setMsg(els.settingsMsg, `❌ ${e.message}`, "bad");
+setMsg(els.settingsMsg, "✅ API + key OK", "ok");
+} catch (err) {
+setMsg(els.settingsMsg, `❌ ${err.message}`, "bad");
 }
 }
 
@@ -573,25 +585,27 @@ els.adminKey.value = adminKey;
 els.apiBaseLabel.textContent = apiBase;
 
 els.saveBtn.addEventListener("click", () => {
-let api = els.apiBase.value.trim().replace(/\/$/, "");
-if (!api.startsWith("http://") && !api.startsWith("https://")) api = "https://" + api;
+let api = els.apiBase.value.trim().replace(/\/$/, '');
+if (!api.match(/^https?:\/\//)) api = "https://" + api;
 if (!api) api = DEFAULT_API_BASE;
-
 const key = els.adminKey.value.trim();
-saveConfig(api, key);
 
+saveConfig(api, key);
 els.apiBase.value = api;
 els.adminKey.value = key;
 els.apiBaseLabel.textContent = api;
 
-setMsg(els.settingsMsg, "✅ Saved.", "ok");
+setMsg(els.settingsMsg, "✅ Saved", "ok");
 loadWaitlist();
 loadCouriers();
 });
 
 els.testBtn.addEventListener("click", testAPI);
-els.refreshWaitlist.addEventListener("click", loadWaitlist);
-els.refreshCouriers.addEventListener("click", loadCouriers);
+els.refreshWaitlist.addEventListener("click", () => { els.waitlistSearch.value = ""; loadWaitlist(); });
+els.refreshCouriers.addEventListener("click", () => { els.courierSearch.value = ""; loadCouriers(); });
+
+els.waitlistSearch.addEventListener("input", applyWaitlistFilter);
+els.courierSearch.addEventListener("input", applyCourierFilter);
 
 loadWaitlist();
 loadCouriers();
