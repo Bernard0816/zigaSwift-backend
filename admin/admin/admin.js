@@ -1,6 +1,7 @@
+// admin.js
 // ZigaSwift Admin Dashboard (static)
 // Stores API base + optional admin key in localStorage
-// Adds: Accept / Reject / Delete actions
+// Adds: Accept / Reject / Delete actions (WORKING)
 
 const DEFAULT_API_BASE = "https://zigaswift-backend.onrender.com";
 
@@ -44,45 +45,8 @@ if (adminKey) headers["x-admin-key"] = adminKey;
 return headers;
 }
 
-async function getJSON(path) {
+async function requestJSON(method, path) {
 const { apiBase, adminKey } = getConfig();
-const url = `${apiBase}${path}`;
-
-const headers = { "Content-Type": "application/json" };
-if (adminKey) headers["x-admin-key"] = adminKey;
-
-let res;
-try {
-res = await fetch(url, { headers });
-} catch (e) {
-throw new Error("Network error: " + e.message);
-}
-
-const text = await res.text();
-let data;
-try {
-data = JSON.parse(text);
-} catch {
-data = { raw: text };
-}
-
-if (!res.ok) {
-if (res.status === 401) {
-throw new Error(
-adminKey
-? "Admin key rejected (401). Paste the correct ADMIN_KEY and click Save."
-: "Admin key required (401). Paste ADMIN_KEY and click Save."
-);
-}
-const msg = data?.error || data?.message || `Request failed (${res.status})`;
-throw new Error(msg);
-}
-
-return data;
-}
-
-async function callAdminAction(method, path) {
-const { apiBase } = getConfig();
 const url = `${apiBase}${path}`;
 
 let res;
@@ -105,9 +69,13 @@ data = { raw: text };
 
 if (!res.ok) {
 if (res.status === 401) {
-throw new Error("Unauthorized (401). Check ADMIN_KEY.");
+throw new Error(
+adminKey
+? "Admin key rejected (401). Paste the correct ADMIN_KEY and click Save."
+: "Admin key required (401). Paste ADMIN_KEY and click Save."
+);
 }
-throw new Error(data?.error || `Request failed (${res.status})`);
+throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
 }
 
 return data;
@@ -122,24 +90,28 @@ b.addEventListener("click", onClick);
 return b;
 }
 
-function renderWaitlistRows(tbody, rows) {
+function renderEmptyRow(tbody, colSpan) {
 tbody.innerHTML = "";
-
-if (!Array.isArray(rows) || rows.length === 0) {
 const tr = document.createElement("tr");
 const td = document.createElement("td");
-td.colSpan = 6; // 5 columns + Actions
+td.colSpan = colSpan;
 td.textContent = "No records found.";
 td.style.color = "#9ab0d6";
 tr.appendChild(td);
 tbody.appendChild(tr);
-return;
+}
+
+function renderWaitlistRows(tbody, rows) {
+tbody.innerHTML = "";
+
+if (!Array.isArray(rows) || rows.length === 0) {
+return renderEmptyRow(tbody, 6); // 5 cols + Actions
 }
 
 for (const r of rows) {
 const tr = document.createElement("tr");
 
-// columns
+// data columns
 const cols = ["id", "name", "email", "city", "created_at"];
 for (const c of cols) {
 const td = document.createElement("td");
@@ -147,9 +119,8 @@ td.textContent = r?.[c] ?? "";
 tr.appendChild(td);
 }
 
-// Actions column
+// actions
 const actionsTd = document.createElement("td");
-actionsTd.className = "actions-col";
 const wrap = document.createElement("div");
 wrap.className = "actions";
 
@@ -158,7 +129,7 @@ const id = r.id;
 const acceptBtn = makeBtn("Accept", "btn-sm btn-accept", async () => {
 acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = true;
 try {
-await callAdminAction("POST", `/api/admin/waitlist/${id}/accept`);
+await requestJSON("PATCH", `/api/admin/waitlist/${id}/accept`);
 await loadWaitlist();
 } catch (e) {
 alert(e.message);
@@ -168,14 +139,14 @@ acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = false;
 });
 
 const rejectBtn = makeBtn("Reject", "btn-sm btn-reject", async () => {
-rejectBtn.disabled = acceptBtn.disabled = delBtn.disabled = true;
+acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = true;
 try {
-await callAdminAction("POST", `/api/admin/waitlist/${id}/reject`);
+await requestJSON("PATCH", `/api/admin/waitlist/${id}/reject`);
 await loadWaitlist();
 } catch (e) {
 alert(e.message);
 } finally {
-rejectBtn.disabled = acceptBtn.disabled = delBtn.disabled = false;
+acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = false;
 }
 });
 
@@ -183,20 +154,21 @@ const delBtn = makeBtn("Delete", "btn-sm btn-delete", async () => {
 const ok = confirm(`Delete waitlist record #${id}? This cannot be undone.`);
 if (!ok) return;
 
-delBtn.disabled = acceptBtn.disabled = rejectBtn.disabled = true;
+acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = true;
 try {
-await callAdminAction("DELETE", `/api/admin/waitlist/${id}`);
+await requestJSON("DELETE", `/api/admin/waitlist/${id}`);
 await loadWaitlist();
 } catch (e) {
 alert(e.message);
 } finally {
-delBtn.disabled = acceptBtn.disabled = rejectBtn.disabled = false;
+acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = false;
 }
 });
 
 wrap.appendChild(acceptBtn);
 wrap.appendChild(rejectBtn);
 wrap.appendChild(delBtn);
+
 actionsTd.appendChild(wrap);
 tr.appendChild(actionsTd);
 
@@ -208,14 +180,7 @@ function renderCourierRows(tbody, rows) {
 tbody.innerHTML = "";
 
 if (!Array.isArray(rows) || rows.length === 0) {
-const tr = document.createElement("tr");
-const td = document.createElement("td");
-td.colSpan = 6; // 5 columns + Actions
-td.textContent = "No records found.";
-td.style.color = "#9ab0d6";
-tr.appendChild(td);
-tbody.appendChild(tr);
-return;
+return renderEmptyRow(tbody, 6); // 5 cols + Actions
 }
 
 for (const r of rows) {
@@ -229,7 +194,6 @@ tr.appendChild(td);
 }
 
 const actionsTd = document.createElement("td");
-actionsTd.className = "actions-col";
 const wrap = document.createElement("div");
 wrap.className = "actions";
 
@@ -238,7 +202,7 @@ const id = r.id;
 const acceptBtn = makeBtn("Accept", "btn-sm btn-accept", async () => {
 acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = true;
 try {
-await callAdminAction("POST", `/api/admin/couriers/${id}/accept`);
+await requestJSON("PATCH", `/api/admin/couriers/${id}/accept`);
 await loadCouriers();
 } catch (e) {
 alert(e.message);
@@ -248,14 +212,14 @@ acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = false;
 });
 
 const rejectBtn = makeBtn("Reject", "btn-sm btn-reject", async () => {
-rejectBtn.disabled = acceptBtn.disabled = delBtn.disabled = true;
+acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = true;
 try {
-await callAdminAction("POST", `/api/admin/couriers/${id}/reject`);
+await requestJSON("PATCH", `/api/admin/couriers/${id}/reject`);
 await loadCouriers();
 } catch (e) {
 alert(e.message);
 } finally {
-rejectBtn.disabled = acceptBtn.disabled = delBtn.disabled = false;
+acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = false;
 }
 });
 
@@ -263,20 +227,21 @@ const delBtn = makeBtn("Delete", "btn-sm btn-delete", async () => {
 const ok = confirm(`Delete courier application #${id}? This cannot be undone.`);
 if (!ok) return;
 
-delBtn.disabled = acceptBtn.disabled = rejectBtn.disabled = true;
+acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = true;
 try {
-await callAdminAction("DELETE", `/api/admin/couriers/${id}`);
+await requestJSON("DELETE", `/api/admin/couriers/${id}`);
 await loadCouriers();
 } catch (e) {
 alert(e.message);
 } finally {
-delBtn.disabled = acceptBtn.disabled = rejectBtn.disabled = false;
+acceptBtn.disabled = rejectBtn.disabled = delBtn.disabled = false;
 }
 });
 
 wrap.appendChild(acceptBtn);
 wrap.appendChild(rejectBtn);
 wrap.appendChild(delBtn);
+
 actionsTd.appendChild(wrap);
 tr.appendChild(actionsTd);
 
@@ -287,7 +252,7 @@ tbody.appendChild(tr);
 async function loadWaitlist() {
 setMsg(els.waitlistMsg, "Loading waitlist…");
 try {
-const data = await getJSON("/api/admin/waitlist");
+const data = await requestJSON("GET", "/api/admin/waitlist");
 renderWaitlistRows(els.waitlistBody, data.items || []);
 setMsg(els.waitlistMsg, `Loaded ${data.items?.length ?? 0} waitlist records.`, "ok");
 } catch (e) {
@@ -298,7 +263,7 @@ setMsg(els.waitlistMsg, `❌ ${e.message}`, "bad");
 async function loadCouriers() {
 setMsg(els.courierMsg, "Loading courier applications…");
 try {
-const data = await getJSON("/api/admin/couriers");
+const data = await requestJSON("GET", "/api/admin/couriers");
 renderCourierRows(els.courierBody, data.items || []);
 setMsg(els.courierMsg, `Loaded ${data.items?.length ?? 0} courier applications.`, "ok");
 } catch (e) {
@@ -306,7 +271,6 @@ setMsg(els.courierMsg, `❌ ${e.message}`, "bad");
 }
 }
 
-// UPDATED: Test API now validates the admin key too
 async function testAPI() {
 setMsg(els.settingsMsg, "Testing API…");
 try {
@@ -319,7 +283,6 @@ const headers = {};
 if (adminKey) headers["x-admin-key"] = adminKey;
 
 const adminRes = await fetch(`${apiBase}/api/admin/waitlist`, { headers });
-
 if (adminRes.status === 401) {
 throw new Error(
 adminKey
@@ -327,7 +290,6 @@ adminKey
 : "Admin key required (401 Unauthorized). Paste ADMIN_KEY and click Save."
 );
 }
-
 if (!adminRes.ok) throw new Error(`Admin endpoint failed (${adminRes.status})`);
 
 setMsg(els.settingsMsg, "✅ API reachable + Admin key OK.", "ok");
