@@ -350,7 +350,7 @@ return res.json({ ok: true, items: rows });
 );
 });
 
-// Admin actions (accept/reject/delete)
+// Admin actions (accept/reject/delete) for waitlist
 app.patch("/api/admin/waitlist/:id/accept", requireAdminKey, (req, res) => {
 const id = Number(req.params.id);
 db.run(`UPDATE waitlist SET status='accepted' WHERE id=?`, [id], function (err) {
@@ -375,7 +375,30 @@ return res.json({ ok: true, deleted: this.changes });
 });
 });
 
-// Same for couriers...
+// Admin actions for couriers (accept/reject/delete)
+app.patch("/api/admin/couriers/:id/accept", requireAdminKey, (req, res) => {
+const id = Number(req.params.id);
+db.run(`UPDATE couriers SET status='accepted' WHERE id=?`, [id], function (err) {
+if (err) return res.status(500).json({ ok: false, error: "Database error" });
+return res.json({ ok: true, updated: this.changes });
+});
+});
+
+app.patch("/api/admin/couriers/:id/reject", requireAdminKey, (req, res) => {
+const id = Number(req.params.id);
+db.run(`UPDATE couriers SET status='rejected' WHERE id=?`, [id], function (err) {
+if (err) return res.status(500).json({ ok: false, error: "Database error" });
+return res.json({ ok: true, updated: this.changes });
+});
+});
+
+app.delete("/api/admin/couriers/:id", requireAdminKey, (req, res) => {
+const id = Number(req.params.id);
+db.run(`DELETE FROM couriers WHERE id=?`, [id], function (err) {
+if (err) return res.status(500).json({ ok: false, error: "Database error" });
+return res.json({ ok: true, deleted: this.changes });
+});
+});
 
 // ────────────────────────────────────────────────
 // NEW: STRIPE PAYMENT ENDPOINT FOR SENDERS
