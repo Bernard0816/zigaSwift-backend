@@ -461,7 +461,7 @@ res.status(404).send("Not Found");
 
 // Start server
 app.listen(PORT, () => {
-console.log(`ZigaSwift backend running at https://zigaswift-backend-1.onrender.com');
+console.log(`ZigaSwift backend running on ${SITE_URL} (PORT ${PORT})`);
 if (ADMIN_NOTIFY_EMAIL) console.log("Admin notify email:", ADMIN_NOTIFY_EMAIL);
 if (!smtpConfigured) console.log("SMTP not configured — emails skipped.");
 if (process.env.STRIPE_SECRET_KEY) console.log("Stripe initialized (test mode assumed)");
