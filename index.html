@@ -66,14 +66,20 @@
         <span></span><span></span><span></span>
       </button>
 
-      <div class="nav-links" id="navLinks">
-        <a href="#how">How it works</a>
-        <a href="#safety">Safety</a>
-        <a href="#earn">Earn</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#faq">FAQ</a>
-        <a class="btn btn-sm btn-ghost" href="#waitlist">Join waitlist</a>
-      </div>
+<div class="nav-links" id="navLinks">
+<a href="#how">How it works</a>
+<a href="#safety">Safety</a>
+<a href="#earn">Earn</a>
+<a href="#pricing">Pricing</a>
+<a href="#faq">FAQ</a>
+
+<!-- Sign In button -->
+<button class="btn btn-sm btn-ghost" id="signInBtn" type="button">
+Sign In
+</button>
+
+<a class="btn btn-sm" href="#waitlist">Join waitlist</a>
+</div>
     </nav>
   </header>
 
@@ -467,6 +473,61 @@
     </footer>
   </main>
 
+  <!-- Sign In / Register Modal -->
+<div id="authModal" class="modal" aria-hidden="true">
+<div class="modal-content">
+<button class="close-modal" id="closeModal" aria-label="Close">×</button>
+
+<h2 id="modalTitle">Sign In</h2>
+
+<form id="authForm" novalidate>
+<label for="authName" id="nameLabel" style="display:none;">
+Full Name
+</label>
+<input
+type="text"
+id="authName"
+placeholder="Jane Doe"
+style="display:none;"
+/>
+
+<label for="authEmail">Email</label>
+<input
+type="email"
+id="authEmail"
+placeholder="jane@email.com"
+required
+/>
+
+<label for="authPassword">Password</label>
+<input
+type="password"
+id="authPassword"
+placeholder="At least 6 characters"
+required
+/>
+
+<label for="authRole" id="roleLabel" style="display:none;">
+I want to
+</label>
+<select id="authRole" style="display:none;">
+<option value="sender">Send packages</option>
+<option value="courier">Become a courier</option>
+</select>
+
+<button type="submit" class="btn" id="authSubmit">
+Sign In
+</button>
+
+<p class="form-msg" id="authMessage" aria-live="polite"></p>
+</form>
+
+<p class="toggle-form">
+Don’t have an account?
+<a href="#" id="toggleRegister">Register</a>
+</p>
+</div>
+</div>
   <script src="script.js"></script>
 </body>
 </html>
