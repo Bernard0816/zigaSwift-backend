@@ -154,6 +154,113 @@ input:focus{border-color:rgba(110,168,255,.45);box-shadow:0 0 0 6px rgba(110,168
 .footer-links a:hover{color:var(--text)}
 .footer-brand{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 
+/* =========================
+AUTH MODAL (Sign In/Register)
+Paste this near the bottom (before @media)
+========================= */
+
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.78);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:1000;
+
+opacity:0;
+pointer-events:none;
+transition:opacity .25s ease;
+}
+
+.modal.open{opacity:1;pointer-events:auto;}
+
+.modal-content{
+width:min(440px,92%);
+border-radius:var(--radius);
+border:1px solid var(--border);
+background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+box-shadow:var(--shadow);
+padding:26px 22px;
+position:relative;
+}
+
+.modal-content h2{
+margin:0 0 12px;
+}
+
+.close-modal{
+position:absolute;
+top:10px;
+right:12px;
+width:42px;
+height:42px;
+border-radius:12px;
+border:1px solid var(--border);
+background:rgba(255,255,255,.04);
+color:var(--text);
+font-size:24px;
+cursor:pointer;
+}
+
+.close-modal:hover{
+transform:translateY(-1px);
+}
+
+#authForm label{
+display:block;
+font-weight:800;
+margin:10px 0 8px;
+}
+
+#authForm input,
+#authForm select{
+width:100%;
+padding:12px 12px;
+border-radius:14px;
+border:1px solid var(--border);
+background:rgba(255,255,255,.03);
+color:var(--text);
+outline:none;
+}
+
+#authForm input:focus,
+#authForm select:focus{
+border-color:rgba(110,168,255,.45);
+box-shadow:0 0 0 6px rgba(110,168,255,.12);
+}
+
+.toggle-form{
+text-align:center;
+margin-top:14px;
+color:var(--muted);
+font-weight:650;
+}
+
+.toggle-form a{
+color:var(--accent);
+cursor:pointer;
+font-weight:800;
+}
+
+/* Important: only center the message INSIDE the modal
+(so it doesn't affect your waitlist/courier .form-msg) */
+#authMessage.form-msg{
+margin-top:12px;
+text-align:center;
+min-height:20px;
+}
+
+/* Optional: smooth pop-in */
+.modal.open .modal-content{
+animation:pop .18s ease-out;
+}
+
+@keyframes pop{
+from{transform:translateY(10px);opacity:.6}
+to{transform:translateY(0);opacity:1}
+}
+
 @media (max-width:980px){
   .hero-grid{grid-template-columns:1fr}
   .two-col{grid-template-columns:1fr}
