@@ -1,8 +1,10 @@
 {
-"name": "zigaswift-backend",
+"name": "verifly-landing-fullstack",
 "version": "1.0.0",
-"main": "server.js",
+"private": true,
+"type": "commonjs",
 "scripts": {
+"dev": "node server.js",
 "start": "node server.js"
 },
 "dependencies": {
