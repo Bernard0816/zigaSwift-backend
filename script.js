@@ -100,3 +100,126 @@ email: String(raw.email || "").trim(),
 route: String(raw.route || "").trim(),
 })
 );
+
+// =========================
+// Auth Modal (Sign In/Register) — paste at bottom of script.js
+// =========================
+
+const signInBtn = document.getElementById("signInBtn");
+const authModal = document.getElementById("authModal");
+const closeModal = document.getElementById("closeModal");
+const toggleRegister = document.getElementById("toggleRegister");
+
+const authForm = document.getElementById("authForm");
+const modalTitle = document.getElementById("modalTitle");
+const authSubmit = document.getElementById("authSubmit");
+const authMessage = document.getElementById("authMessage");
+
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const passInput = document.getElementById("password");
+const roleSelect = document.getElementById("role");
+
+// If you haven't added the Sign In button / modal HTML yet, these will be null.
+// This guard prevents errors on pages that don't include the auth section.
+if (signInBtn && authModal && closeModal && authForm && modalTitle && authSubmit && authMessage) {
+let isRegister = false;
+
+function setRegisterMode(on) {
+isRegister = !!on;
+
+modalTitle.textContent = isRegister ? "Register" : "Sign In";
+authSubmit.textContent = isRegister ? "Create account" : "Sign In";
+
+// Show extra fields only for register
+if (nameInput) nameInput.style.display = isRegister ? "" : "none";
+if (roleSelect) roleSelect.style.display = isRegister ? "" : "none";
+
+// Labels (optional: your HTML labels are always visible; this keeps UI consistent)
+const nameLabel = nameInput?.previousElementSibling;
+const roleLabel = roleSelect?.previousElementSibling;
+if (nameLabel) nameLabel.style.display = isRegister ? "" : "none";
+if (roleLabel) roleLabel.style.display = isRegister ? "" : "none";
+
+authMessage.textContent = "";
+}
+
+function openModal() {
+authModal.classList.add("open");
+authMessage.textContent = "";
+setRegisterMode(false);
+// focus email
+setTimeout(() => emailInput?.focus(), 0);
+}
+
+function closeAuthModal() {
+authModal.classList.remove("open");
+authForm.reset();
+authMessage.textContent = "";
+}
+
+signInBtn.addEventListener("click", openModal);
+closeModal.addEventListener("click", closeAuthModal);
+
+// Click outside modal-content closes
+authModal.addEventListener("click", (e) => {
+if (e.target === authModal) closeAuthModal();
+});
+
+// ESC closes
+document.addEventListener("keydown", (e) => {
+if (e.key === "Escape" && authModal.classList.contains("open")) {
+closeAuthModal();
+}
+});
+
+toggleRegister?.addEventListener("click", () => {
+setRegisterMode(!isRegister);
+});
+
+authForm.addEventListener("submit", async (e) => {
+e.preventDefault();
+authMessage.textContent = "Working...";
+
+const email = String(emailInput?.value || "").trim();
+const password = String(passInput?.value || "").trim();
+const fullName = String(nameInput?.value || "").trim();
+const role = String(roleSelect?.value || "sender").trim();
+
+if (!email || !email.includes("@")) {
+authMessage.textContent = "❌ Enter a valid email.";
+return;
+}
+if (!password || password.length < 6) {
+authMessage.textContent = "❌ Password must be at least 6 characters.";
+return;
+}
+if (isRegister && fullName.length < 2) {
+authMessage.textContent = "❌ Enter your full name.";
+return;
+}
+
+try {
+// IMPORTANT: You must create these endpoints on the backend later.
+// For now this will show a clean error if not built yet.
+const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
+const payload = isRegister
+? { name: fullName, email, password, role }
+: { email, password };
+
+const result = await postJSON(endpoint, payload);
+
+// Save token if backend returns one
+if (result?.token) localStorage.setItem("ZS_TOKEN", result.token);
+if (result?.user) localStorage.setItem("ZS_USER", JSON.stringify(result.user));
+
+authMessage.textContent = "✅ Success!";
+setTimeout(() => closeAuthModal(), 600);
+} catch (err) {
+authMessage.textContent = `❌ ${err.message}`;
+}
+});
+
+// initialize hidden fields for Sign In mode
+setRegisterMode(false);
+}
