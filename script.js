@@ -223,3 +223,70 @@ authMessage.textContent = `❌ ${err.message}`;
 // initialize hidden fields for Sign In mode
 setRegisterMode(false);
 }
+
+// ------------------------------
+// Auth modal open + role routing
+// ------------------------------
+const authModal = document.getElementById("authModal");
+const closeModalBtn = document.getElementById("closeModal");
+
+const senderLoginLink = document.getElementById("senderLoginLink");
+const courierLoginLink = document.getElementById("courierLoginLink");
+
+// (Optional) if you still keep the old Sign In button somewhere
+const signInBtn = document.getElementById("signInBtn");
+
+const authRole = document.getElementById("authRole");
+const authForm = document.getElementById("authForm");
+
+let selectedRole = "sender"; // default
+
+function openAuthModal(role) {
+selectedRole = role || "sender";
+
+// If you later want to show the dropdown during register,
+// we still keep the value synced:
+if (authRole) authRole.value = selectedRole;
+
+authModal?.classList.add("open");
+authModal?.setAttribute("aria-hidden", "false");
+}
+
+function closeAuthModal() {
+authModal?.classList.remove("open");
+authModal?.setAttribute("aria-hidden", "true");
+}
+
+senderLoginLink?.addEventListener("click", () => openAuthModal("sender"));
+courierLoginLink?.addEventListener("click", () => openAuthModal("courier"));
+
+// If you still have single Sign In button, it opens as sender by default
+signInBtn?.addEventListener("click", () => openAuthModal("sender"));
+
+closeModalBtn?.addEventListener("click", closeAuthModal);
+
+// close when clicking outside modal-content
+authModal?.addEventListener("click", (e) => {
+if (e.target === authModal) closeAuthModal();
+});
+
+// ESC closes modal
+document.addEventListener("keydown", (e) => {
+if (e.key === "Escape") closeAuthModal();
+});
+
+// TEMP login behavior: redirect by role
+// Later we replace this with real backend auth (JWT)
+authForm?.addEventListener("submit", (e) => {
+e.preventDefault();
+
+// Example: you can read values if you want
+// const email = document.getElementById("authEmail")?.value.trim();
+// const pass = document.getElementById("authPassword")?.value;
+
+if (selectedRole === "courier") {
+window.location.href = "./courier-dashboard.html";
+} else {
+window.location.href = "./sender-dashboard.html";
+}
+});
