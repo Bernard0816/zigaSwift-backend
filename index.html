@@ -28,6 +28,7 @@
 
 <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
 <header class="topbar" id="top">
 <nav class="nav">
@@ -56,44 +57,71 @@
 </header>
 
 <main>
-<!-- All your existing sections remain the same until #courier -->
 
+<!-- NOTE:
+You told me to keep the rest of your existing sections the same.
+So I’m only including the updated #courier section + the login modal + script. -->
+
+<!-- =========================
+REGISTER (ONE ACCOUNT)
+========================= -->
 <section class="section" id="courier">
 <div class="container two-col">
 <div>
-<h2>Become a Courier</h2>
+<h2>Create your ZigaSwift account</h2>
 <p>
-If you travel often, you can earn while you fly. Apply to join our verified courier network.
-After approval, use your email and password to log in to the Courier Dashboard.
+Register once and use the <b>same email + password</b> to sign in as a <b>Sender</b> or a <b>Courier</b>.
+That means you can send packages anytime—and if you’re traveling, you can also carry packages and earn.
 </p>
+
 <ul class="checklist">
-<li>Verified identity</li>
-<li>Choose your routes</li>
-<li>Earn per delivery</li>
+<li>One account for Sender + Courier</li>
+<li>Switch dashboards anytime</li>
+<li>Secure sign-in with password</li>
 </ul>
+
+<div class="note">
+<b>Tip:</b> Your “Typical route” helps us match deliveries when you choose to work as a courier.
+You can still use your account to send packages even if you don’t travel.
+</div>
 </div>
 
 <div class="form-card">
-<form id="courierForm" novalidate>
-<label>Full name <input type="text" id="courierName" placeholder="Alex Johnson" required /></label>
-<label>Email <input type="email" id="courierEmail" placeholder="alex@email.com" required /></label>
-<label>Password <input type="password" id="courierPassword" placeholder="Create a strong password" minlength="6" required /></label>
-<label>Typical route <input type="text" id="courierRoute" placeholder="Chicago → New York" required /></label>
+<form id="registerForm" novalidate>
+<label>
+Full name
+<input type="text" id="regName" placeholder="Alex Johnson" required />
+</label>
 
-<button class="btn" type="submit">Apply as Courier</button>
-<p class="form-msg" id="courierMsg" aria-live="polite"></p>
+<label>
+Email
+<input type="email" id="regEmail" placeholder="alex@email.com" required />
+</label>
+
+<label>
+Password
+<input type="password" id="regPassword" placeholder="At least 6 characters" minlength="6" required />
+</label>
+
+<label>
+Typical route (optional but recommended)
+<input type="text" id="regRoute" placeholder="Chicago → New York" />
+</label>
+
+<button class="btn" type="submit">Create Account</button>
+<p class="form-msg" id="registerMsg" aria-live="polite"></p>
 </form>
 </div>
 </div>
 </section>
 
-<!-- Rest of your sections (waitlist, faq, footer) remain unchanged -->
-<!-- ... (your existing code for waitlist, faq, footer) ... -->
-
-<!-- Sign In / Login Modal -->
+<!-- =========================
+SIGN IN MODAL
+========================= -->
 <div id="authModal" class="modal" aria-hidden="true">
 <div class="modal-content">
 <button class="close-modal" id="closeModal" aria-label="Close">×</button>
+
 <h2 id="modalTitle">Sign In</h2>
 
 <form id="authForm" novalidate>
@@ -108,90 +136,150 @@ After approval, use your email and password to log in to the Courier Dashboard.
 </form>
 </div>
 </div>
+
 </main>
 
 <script>
-// === Courier Application Form ===
-document.getElementById('courierForm').addEventListener('submit', (e) => {
+/* =========================================
+BASIC NAV (your existing behavior)
+========================================= */
+const navToggle = document.getElementById("navToggle");
+const navLinks = document.getElementById("navLinks");
+
+navToggle?.addEventListener("click", () => {
+const isOpen = navLinks.classList.toggle("open");
+navToggle.setAttribute("aria-expanded", String(isOpen));
+});
+
+navLinks?.querySelectorAll("a").forEach((a) => {
+a.addEventListener("click", () => {
+navLinks.classList.remove("open");
+navToggle.setAttribute("aria-expanded", "false");
+});
+});
+
+/* =========================================
+ONE ACCOUNT STORAGE (DEMO)
+- This uses localStorage for now.
+- Later you will replace with real backend auth.
+========================================= */
+const STORAGE_KEY = "ziga_account";
+
+/* ========= REGISTER FORM ========= */
+const registerForm = document.getElementById("registerForm");
+const registerMsg = document.getElementById("registerMsg");
+
+registerForm?.addEventListener("submit", (e) => {
 e.preventDefault();
 
-const name = document.getElementById('courierName').value.trim();
-const email = document.getElementById('courierEmail').value.trim().toLowerCase();
-const password = document.getElementById('courierPassword').value;
-const route = document.getElementById('courierRoute').value.trim();
+const name = document.getElementById("regName").value.trim();
+const email = document.getElementById("regEmail").value.trim().toLowerCase();
+const password = document.getElementById("regPassword").value;
+const route = document.getElementById("regRoute").value.trim();
 
-if (password.length < 6) {
-document.getElementById('courierMsg').textContent = "Password must be at least 6 characters.";
-document.getElementById('courierMsg').style.color = "#ff6b6b";
+if (!name || !email || !email.includes("@")) {
+registerMsg.textContent = "Please enter a valid name and email.";
+registerMsg.style.color = "#ff6b6b";
 return;
 }
 
-// Save courier credentials (demo - replace with real backend later)
-const courierData = { name, email, password, route, role: "courier" };
-localStorage.setItem('ziga_courier_account', JSON.stringify(courierData));
-
-document.getElementById('courierMsg').innerHTML = `
-✅ Application received!<br>
-<strong>You can now log in with:</strong><br>
-Email: ${email}<br>
-Password: (the one you just created)
-`;
-document.getElementById('courierMsg').style.color = "#3ddc97";
-});
-
-// === Login Modal Logic ===
-const modal = document.getElementById('authModal');
-const closeModal = document.getElementById('closeModal');
-const authForm = document.getElementById('authForm');
-const modalTitle = document.getElementById('modalTitle');
-const authMessage = document.getElementById('authMessage');
-
-function openLoginModal(title) {
-modalTitle.textContent = title;
-authMessage.textContent = '';
-modal.style.display = 'flex';
-modal.setAttribute('aria-hidden', 'false');
+if (!password || password.length < 6) {
+registerMsg.textContent = "Password must be at least 6 characters.";
+registerMsg.style.color = "#ff6b6b";
+return;
 }
 
-// Sender Login button
-document.getElementById('senderLoginLink').addEventListener('click', () => {
-openLoginModal('Sender Sign In');
+const account = {
+name,
+email,
+password,
+route,
+createdAt: new Date().toISOString()
+};
+
+localStorage.setItem(STORAGE_KEY, JSON.stringify(account));
+
+registerMsg.innerHTML =
+`✅ Account created!<br>
+You can now sign in as <b>Sender</b> or <b>Courier</b> using the same login.`;
+registerMsg.style.color = "#3ddc97";
+
+registerForm.reset();
 });
 
-// Courier Login button
-document.getElementById('courierLoginLink').addEventListener('click', () => {
-openLoginModal('Courier Sign In');
+/* ========= LOGIN MODAL ========= */
+const modal = document.getElementById("authModal");
+const closeModal = document.getElementById("closeModal");
+const authForm = document.getElementById("authForm");
+const modalTitle = document.getElementById("modalTitle");
+const authMessage = document.getElementById("authMessage");
+
+let loginTarget = "sender"; // default
+
+function openLoginModal(title, target) {
+loginTarget = target;
+modalTitle.textContent = title;
+authMessage.textContent = "";
+modal.classList.add("open");
+modal.style.display = "flex";
+modal.setAttribute("aria-hidden", "false");
+}
+
+function closeLoginModal() {
+modal.classList.remove("open");
+modal.style.display = "none";
+modal.setAttribute("aria-hidden", "true");
+}
+
+document.getElementById("senderLoginLink")?.addEventListener("click", () => {
+openLoginModal("Sender Sign In", "sender");
 });
 
-closeModal.addEventListener('click', () => {
-modal.style.display = 'none';
+document.getElementById("courierLoginLink")?.addEventListener("click", () => {
+openLoginModal("Courier Sign In", "courier");
 });
 
-// Modal form submit (simple demo login)
-authForm.addEventListener('submit', (e) => {
+closeModal?.addEventListener("click", closeLoginModal);
+
+modal?.addEventListener("click", (e) => {
+if (e.target === modal) closeLoginModal();
+});
+
+/* ========= SIGN IN SUBMIT ========= */
+authForm?.addEventListener("submit", (e) => {
 e.preventDefault();
-const email = document.getElementById('authEmail').value.trim().toLowerCase();
-const password = document.getElementById('authPassword').value;
 
-const savedCourier = localStorage.getItem('ziga_courier_account');
-let account = savedCourier ? JSON.parse(savedCourier) : null;
+const email = document.getElementById("authEmail").value.trim().toLowerCase();
+const password = document.getElementById("authPassword").value;
 
-if (account && account.email === email && account.password === password) {
-authMessage.style.color = "#3ddc97";
-authMessage.textContent = `✅ Welcome back, ${account.name}! Redirecting to Courier Dashboard...`;
-setTimeout(() => {
-window.location.href = "/courier-dashboard.html"; // change to your actual courier page
-}, 1500);
-} else {
+const saved = localStorage.getItem(STORAGE_KEY);
+const account = saved ? JSON.parse(saved) : null;
+
+if (!account) {
+authMessage.style.color = "#ff6b6b";
+authMessage.textContent = "No account found. Please register first.";
+return;
+}
+
+if (account.email !== email || account.password !== password) {
 authMessage.style.color = "#ff6b6b";
 authMessage.textContent = "Invalid email or password. Try again.";
+return;
 }
-});
 
-// Close modal when clicking outside
-modal.addEventListener('click', (e) => {
-if (e.target === modal) modal.style.display = 'none';
+authMessage.style.color = "#3ddc97";
+authMessage.textContent = `✅ Welcome back, ${account.name}! Redirecting...`;
+
+// Redirect based on which login button they clicked
+setTimeout(() => {
+if (loginTarget === "courier") {
+window.location.href = "./courier-dashboard.html";
+} else {
+window.location.href = "./sender-dashboard.html";
+}
+}, 900);
 });
 </script>
+
 </body>
 </html>
