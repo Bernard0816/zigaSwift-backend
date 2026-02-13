@@ -290,3 +290,17 @@ window.location.href = "./courier-dashboard.html";
 window.location.href = "./sender-dashboard.html";
 }
 });
+
+// ✅ Live password match check (Register form)
+const passwordInput = document.getElementById("regPassword");
+const confirmInput = document.getElementById("regConfirmPassword");
+
+confirmInput?.addEventListener("input", () => {
+if (!passwordInput) return;
+
+if (confirmInput.value === passwordInput.value) {
+confirmInput.style.borderColor = "#3ddc97";
+} else {
+confirmInput.style.borderColor = "#ff6b6b";
+}
+});
