@@ -53,10 +53,7 @@ opacity: 0;
 pointer-events: none;
 transition: opacity 0.3s;
 }
-.modal.open {
-opacity: 1;
-pointer-events: auto;
-}
+.modal.open { opacity: 1; pointer-events: auto; }
 .modal-content {
 background: #121a2c;
 padding: 32px;
@@ -82,21 +79,17 @@ text-align: center;
 margin-top: 16px;
 color: #9ab0d6;
 }
-.toggle-form a {
-color: #2b76ff;
-cursor: pointer;
-}
+.toggle-form a { color: #2b76ff; cursor: pointer; }
 .form-msg {
 margin-top: 12px;
 text-align: center;
 min-height: 20px;
 color: #ff6b6b;
 }
-.success-msg {
-color: #3ddc97 !important;
-}
+.success-msg { color: #3ddc97 !important; }
 </style>
 </head>
+
 <body>
 <header class="topbar" id="top">
 <nav class="nav">
@@ -116,8 +109,8 @@ color: #3ddc97 !important;
 <a href="#pricing">Pricing</a>
 <a href="#faq">FAQ</a>
 
-<!-- Unified Sign In button -->
-<button class="btn btn-sm btn-ghost" id="signInBtn">Sign In / Register</button>
+<!-- ✅ ONE LOGIN BUTTON (for all users) -->
+<button class="btn btn-sm btn-ghost" id="loginBtn" type="button">Login</button>
 
 <a class="btn btn-sm btn-ghost" href="#waitlist">Join waitlist</a>
 </div>
@@ -125,9 +118,8 @@ color: #3ddc97 !important;
 </header>
 
 <main>
-<!-- Your existing hero, problem/solution, how it works, safety, earn, pricing, waitlist, courier sections remain unchanged -->
-
-<!-- ... paste all your existing sections here ... -->
+<!-- ✅ Keep your existing page sections exactly as you already have them -->
+<!-- (hero, strip, problem/solution, how, safety, earn, pricing, waitlist, courier, faq, footer...) -->
 
 <!-- SIGN IN / REGISTER MODAL -->
 <div id="authModal" class="modal" aria-hidden="true">
@@ -137,124 +129,212 @@ color: #3ddc97 !important;
 <h2 id="modalTitle">Sign In</h2>
 
 <form id="authForm" novalidate>
-<label for="authName" style="display:none;">Full Name</label>
+<label for="authName" id="nameLabel" style="display:none;">Full Name</label>
 <input type="text" id="authName" placeholder="Jane Doe" style="display:none;" />
 
 <label for="authEmail">Email</label>
 <input type="email" id="authEmail" placeholder="your@email.com" required />
 
 <label for="authPassword">Password</label>
-<input type="password" id="authPassword" placeholder="At least 6 characters" required />
+<input type="password" id="authPassword" placeholder="At least 6 characters" minlength="6" required />
 
-<label for="authRole" style="display:none;">I want to</label>
+<label for="authConfirmPassword" id="confirmLabel" style="display:none;">Confirm Password</label>
+<input type="password" id="authConfirmPassword" placeholder="Re-enter your password" minlength="6" style="display:none;" />
+
+<!-- Optional: keep role for backend until unified dashboard is ready -->
+<label for="authRole" id="roleLabel" style="display:none;">I want to</label>
 <select id="authRole" style="display:none;">
 <option value="sender">Send packages</option>
-<option value="courier">Become a courier</option>
+<option value="courier">Carry packages</option>
 </select>
 
 <button type="submit" class="btn" id="authSubmit">Sign In</button>
-<p class="form-msg" id="authMessage"></p>
+<p class="form-msg" id="authMessage" aria-live="polite"></p>
 </form>
 
 <p class="toggle-form">
-Don't have an account? <a id="toggleRegister">Register now</a>
+<span id="toggleText">Don’t have an account?</span>
+<a href="#" id="toggleRegister">Register now</a>
 </p>
 </div>
 </div>
+
+<!-- your existing footer stays in your file below if you already have it -->
 </main>
 
-<footer class="footer">
-<!-- Your existing footer -->
-</footer>
-
 <script>
-// Your existing nav toggle, year, waitlist form, etc. scripts remain here
+// ────────────────────────────────────────────────
+// NAV (optional: safe even if your script.js already does it)
+// ────────────────────────────────────────────────
+const navToggle = document.getElementById("navToggle");
+const navLinks = document.getElementById("navLinks");
+navToggle?.addEventListener("click", () => {
+const isOpen = navLinks.classList.toggle("open");
+navToggle.setAttribute("aria-expanded", String(isOpen));
+});
+navLinks?.querySelectorAll("a").forEach((a) => {
+a.addEventListener("click", () => {
+navLinks.classList.remove("open");
+navToggle?.setAttribute("aria-expanded", "false");
+});
+});
 
 // ────────────────────────────────────────────────
-// UNIFIED SIGN IN / REGISTER MODAL LOGIC
+// ✅ ONE LOGIN BUTTON FOR ALL USERS
 // ────────────────────────────────────────────────
-const backendUrl = 'https://zigaswift-backend-1.onrender.com'; // Change if needed
+const backendUrl = "https://zigaswift-backend-1.onrender.com"; // change if needed
 
-const authModal = document.getElementById('authModal');
-const closeModal = document.getElementById('closeModal');
-const signInBtn = document.getElementById('signInBtn');
-const authForm = document.getElementById('authForm');
-const modalTitle = document.getElementById('modalTitle');
-const authSubmit = document.getElementById('authSubmit');
-const toggleRegister = document.getElementById('toggleRegister');
-const authName = document.getElementById('authName');
-const authRole = document.getElementById('authRole');
-const authMessage = document.getElementById('authMessage');
+const authModal = document.getElementById("authModal");
+const closeModal = document.getElementById("closeModal");
+const loginBtn = document.getElementById("loginBtn");
+const authForm = document.getElementById("authForm");
+const modalTitle = document.getElementById("modalTitle");
+const authSubmit = document.getElementById("authSubmit");
+const toggleRegister = document.getElementById("toggleRegister");
+const toggleText = document.getElementById("toggleText");
+
+const authName = document.getElementById("authName");
+const nameLabel = document.getElementById("nameLabel");
+
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+
+const authConfirmPassword = document.getElementById("authConfirmPassword");
+const confirmLabel = document.getElementById("confirmLabel");
+
+const authRole = document.getElementById("authRole");
+const roleLabel = document.getElementById("roleLabel");
+
+const authMessage = document.getElementById("authMessage");
 
 let isRegister = false;
 
+function show(el, yes) { el.style.display = yes ? "block" : "none"; }
+
 function openModal(register = false) {
 isRegister = register;
-modalTitle.textContent = register ? 'Create Account' : 'Sign In';
-authSubmit.textContent = register ? 'Register' : 'Sign In';
-toggleRegister.textContent = register ? 'Already have an account? Sign In' : 'Don’t have an account? Register';
-authName.style.display = register ? 'block' : 'none';
-authRole.style.display = register ? 'block' : 'none';
-authMessage.textContent = '';
-authModal.classList.add('open');
-authModal.setAttribute('aria-hidden', 'false');
+
+modalTitle.textContent = register ? "Create Account" : "Sign In";
+authSubmit.textContent = register ? "Register" : "Sign In";
+
+toggleText.textContent = register ? "Already have an account?" : "Don’t have an account?";
+toggleRegister.textContent = register ? "Sign in" : "Register now";
+
+show(nameLabel, register);
+show(authName, register);
+
+show(confirmLabel, register);
+show(authConfirmPassword, register);
+
+// Keep role for now (until unified dashboard is done)
+show(roleLabel, register);
+show(authRole, register);
+
+authMessage.classList.remove("success-msg");
+authMessage.textContent = "";
+
+authModal.classList.add("open");
+authModal.setAttribute("aria-hidden", "false");
 }
 
 function closeAuthModal() {
-authModal.classList.remove('open');
-authModal.setAttribute('aria-hidden', 'true');
+authModal.classList.remove("open");
+authModal.setAttribute("aria-hidden", "true");
 }
 
-signInBtn.addEventListener('click', () => openModal(false));
-closeModal.addEventListener('click', closeAuthModal);
-toggleRegister.addEventListener('click', () => openModal(!isRegister));
+loginBtn.addEventListener("click", () => openModal(false));
+closeModal.addEventListener("click", closeAuthModal);
 
-// Close modal when clicking outside content
-authModal.addEventListener('click', (e) => {
+toggleRegister.addEventListener("click", (e) => {
+e.preventDefault();
+openModal(!isRegister);
+});
+
+authModal.addEventListener("click", (e) => {
 if (e.target === authModal) closeAuthModal();
 });
 
-authForm.addEventListener('submit', async (e) => {
+// Live confirm password check (ONLY in register mode)
+authConfirmPassword.addEventListener("input", () => {
+if (!isRegister) return;
+if (authConfirmPassword.value && authPassword.value === authConfirmPassword.value) {
+authConfirmPassword.style.borderColor = "#3ddc97";
+} else {
+authConfirmPassword.style.borderColor = "#ff6b6b";
+}
+});
+
+authForm.addEventListener("submit", async (e) => {
 e.preventDefault();
 authSubmit.disabled = true;
-authMessage.textContent = '';
+authMessage.classList.remove("success-msg");
+authMessage.textContent = "";
 
-const payload = {
-email: document.getElementById('authEmail').value.trim(),
-password: document.getElementById('authPassword').value,
-};
+const email = authEmail.value.trim().toLowerCase();
+const password = authPassword.value;
+
+if (!email || !email.includes("@")) {
+authMessage.textContent = "Please enter a valid email.";
+authSubmit.disabled = false;
+return;
+}
+if (!password || password.length < 6) {
+authMessage.textContent = "Password must be at least 6 characters.";
+authSubmit.disabled = false;
+return;
+}
+
+const payload = { email, password };
 
 if (isRegister) {
-payload.name = document.getElementById('authName').value.trim();
-payload.role = document.getElementById('authRole').value;
+const name = authName.value.trim();
+const confirm = authConfirmPassword.value;
+
+if (!name) {
+authMessage.textContent = "Please enter your full name.";
+authSubmit.disabled = false;
+return;
+}
+if (password !== confirm) {
+authMessage.textContent = "Passwords do not match.";
+authSubmit.disabled = false;
+return;
+}
+
+payload.name = name;
+payload.role = authRole.value; // optional (until unified dashboard)
 }
 
 try {
-const endpoint = isRegister ? '/api/register' : '/api/login';
+const endpoint = isRegister ? "/api/register" : "/api/login";
+
 const res = await fetch(backendUrl + endpoint, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
+method: "POST",
+headers: { "Content-Type": "application/json" },
 body: JSON.stringify(payload),
 });
 
-const data = await res.json();
+const data = await res.json().catch(() => ({}));
 
-if (!data.ok) {
-throw new Error(data.error || 'Failed. Please try again.');
+if (!res.ok || !data.ok) {
+throw new Error(data.error || "Failed. Please try again.");
 }
 
-// Save token
-localStorage.setItem('jwtToken', data.token);
+// Save token + role (role comes from register selection or backend response)
+if (data.token) localStorage.setItem("jwtToken", data.token);
 
-authMessage.classList.add('success-msg');
-authMessage.textContent = `Welcome${isRegister ? '!' : ' back'}! Redirecting...`;
+const role = data.role || payload.role || localStorage.getItem("role") || "sender";
+localStorage.setItem("role", role);
 
-// Redirect after short delay
+authMessage.classList.add("success-msg");
+authMessage.textContent = "✅ Success! Redirecting...";
+
 setTimeout(() => {
-// Use role from backend response or token (you can decode JWT if needed)
-const role = payload.role || 'sender'; // fallback
-window.location.href = role === 'courier' ? 'courier-dashboard.html' : 'sender-dashboard.html';
-}, 1200);
+// Until unified dashboard is created, still route based on role
+window.location.href = role === "courier" ? "courier-dashboard.html" : "sender-dashboard.html";
+// When you create unified dashboard later, change to:
+// window.location.href = "dashboard.html";
+}, 900);
 
 } catch (err) {
 authMessage.textContent = err.message;
@@ -263,13 +343,14 @@ authSubmit.disabled = false;
 }
 });
 
-// Check if already logged in (optional)
-if (localStorage.getItem('jwtToken')) {
-signInBtn.textContent = 'Dashboard';
-signInBtn.onclick = () => {
-const role = localStorage.getItem('role') || 'sender';
-window.location.href = role === 'courier' ? 'courier-dashboard.html' : 'sender-dashboard.html';
-};
+// Optional: change button label if already logged in
+if (localStorage.getItem("jwtToken")) {
+loginBtn.textContent = "Dashboard";
+loginBtn.addEventListener("click", () => {
+const role = localStorage.getItem("role") || "sender";
+window.location.href = role === "courier" ? "courier-dashboard.html" : "sender-dashboard.html";
+// later change to: window.location.href = "dashboard.html";
+});
 }
 </script>
 </body>
