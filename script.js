@@ -3,6 +3,10 @@
 // ✅ CHANGE THIS to your real backend (Node/Express) service:
 const API_BASE = "https://zigaswift-backend-1.onrender.com";
 
+document.addEventListener("DOMContentLoaded", () => {
+/* =========================
+NAV + YEAR
+========================= */
 const navToggle = document.getElementById("navToggle");
 const navLinks = document.getElementById("navLinks");
 
@@ -21,10 +25,11 @@ navToggle.setAttribute("aria-expanded", "false");
 const yearEl = document.getElementById("year");
 if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
+/* =========================
+HELPERS
+========================= */
 async function postJSON(pathOrUrl, payload) {
-const url = pathOrUrl.startsWith("http")
-? pathOrUrl
-: `${API_BASE}${pathOrUrl}`;
+const url = pathOrUrl.startsWith("http") ? pathOrUrl : `${API_BASE}${pathOrUrl}`;
 
 const res = await fetch(url, {
 method: "POST",
@@ -53,7 +58,6 @@ msg.textContent = "Submitting...";
 const data = new FormData(form);
 const raw = Object.fromEntries(data.entries());
 
-// optional payload transform (fix field names, trim, etc.)
 const payload = transformPayload ? transformPayload(raw) : raw;
 
 const name = String(payload.name || "").trim();
@@ -74,8 +78,9 @@ msg.textContent = `❌ ${err.message}`;
 });
 }
 
-// ✅ Waitlist: your backend expects { name, email, city }
-// but your form uses name="hub" -> map hub => city
+/* =========================
+WAITLIST
+========================= */
 handleForm(
 "waitlistForm",
 "waitlistMsg",
@@ -84,11 +89,15 @@ handleForm(
 (raw) => ({
 name: String(raw.name || "").trim(),
 email: String(raw.email || "").trim(),
-city: String(raw.city || raw.hub || "").trim(), // supports either input name
+city: String(raw.city || raw.hub || "").trim(),
 })
 );
 
-// ✅ Courier: backend expects { name, email, route }
+/* =========================
+COURIER FORM (optional: only if you still have it)
+NOTE: Your HTML you shared uses registerForm, not courierForm.
+This is safe: if courierForm doesn't exist, it does nothing.
+========================= */
 handleForm(
 "courierForm",
 "courierMsg",
@@ -101,206 +110,72 @@ route: String(raw.route || "").trim(),
 })
 );
 
-// =========================
-// Auth Modal (Sign In/Register) — paste at bottom of script.js
-// =========================
-
-const signInBtn = document.getElementById("signInBtn");
-const authModal = document.getElementById("authModal");
-const closeModal = document.getElementById("closeModal");
-const toggleRegister = document.getElementById("toggleRegister");
-
+/* =========================
+AUTH MODAL (ONE LOGIN) — FIXED
+Requires in HTML:
+- nav button id="LoginLink"
+- modal id="authModal"
+- close button id="closeModal"
+- form id="authForm"
+- email input id="authEmail"
+- password input id="authPassword"
+- message p id="authMessage"
+- link id="goRegisterLink" href="#courier"
+========================= */
+const loginBtn = document.getElementById("LoginLink");
+const modal = document.getElementById("authModal");
+const closeBtn = document.getElementById("closeModal");
 const authForm = document.getElementById("authForm");
-const modalTitle = document.getElementById("modalTitle");
-const authSubmit = document.getElementById("authSubmit");
 const authMessage = document.getElementById("authMessage");
-
-const nameInput = document.getElementById("name");
-const emailInput = document.getElementById("email");
-const passInput = document.getElementById("password");
-const roleSelect = document.getElementById("role");
-
-// If you haven't added the Sign In button / modal HTML yet, these will be null.
-// This guard prevents errors on pages that don't include the auth section.
-if (signInBtn && authModal && closeModal && authForm && modalTitle && authSubmit && authMessage) {
-let isRegister = false;
-
-function setRegisterMode(on) {
-isRegister = !!on;
-
-modalTitle.textContent = isRegister ? "Register" : "Sign In";
-authSubmit.textContent = isRegister ? "Create account" : "Sign In";
-
-// Show extra fields only for register
-if (nameInput) nameInput.style.display = isRegister ? "" : "none";
-if (roleSelect) roleSelect.style.display = isRegister ? "" : "none";
-
-// Labels (optional: your HTML labels are always visible; this keeps UI consistent)
-const nameLabel = nameInput?.previousElementSibling;
-const roleLabel = roleSelect?.previousElementSibling;
-if (nameLabel) nameLabel.style.display = isRegister ? "" : "none";
-if (roleLabel) roleLabel.style.display = isRegister ? "" : "none";
-
-authMessage.textContent = "";
-}
+const goRegisterLink = document.getElementById("goRegisterLink");
 
 function openModal() {
-authModal.classList.add("open");
-authMessage.textContent = "";
-setRegisterMode(false);
-// focus email
-setTimeout(() => emailInput?.focus(), 0);
+if (!modal) return;
+if (authMessage) authMessage.textContent = "";
+modal.classList.add("open");
+modal.style.display = "flex";
+modal.setAttribute("aria-hidden", "false");
 }
 
-function closeAuthModal() {
-authModal.classList.remove("open");
-authForm.reset();
-authMessage.textContent = "";
+function closeModal() {
+if (!modal) return;
+modal.classList.remove("open");
+modal.style.display = "none";
+modal.setAttribute("aria-hidden", "true");
+authForm?.reset();
+if (authMessage) authMessage.textContent = "";
 }
 
-signInBtn.addEventListener("click", openModal);
-closeModal.addEventListener("click", closeAuthModal);
-
-// Click outside modal-content closes
-authModal.addEventListener("click", (e) => {
-if (e.target === authModal) closeAuthModal();
-});
-
-// ESC closes
-document.addEventListener("keydown", (e) => {
-if (e.key === "Escape" && authModal.classList.contains("open")) {
-closeAuthModal();
-}
-});
-
-toggleRegister?.addEventListener("click", () => {
-setRegisterMode(!isRegister);
-});
-
-authForm.addEventListener("submit", async (e) => {
+loginBtn?.addEventListener("click", (e) => {
 e.preventDefault();
-authMessage.textContent = "Working...";
-
-const email = String(emailInput?.value || "").trim();
-const password = String(passInput?.value || "").trim();
-const fullName = String(nameInput?.value || "").trim();
-const role = String(roleSelect?.value || "sender").trim();
-
-if (!email || !email.includes("@")) {
-authMessage.textContent = "❌ Enter a valid email.";
-return;
-}
-if (!password || password.length < 6) {
-authMessage.textContent = "❌ Password must be at least 6 characters.";
-return;
-}
-if (isRegister && fullName.length < 2) {
-authMessage.textContent = "❌ Enter your full name.";
-return;
-}
-
-try {
-// IMPORTANT: You must create these endpoints on the backend later.
-// For now this will show a clean error if not built yet.
-const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
-const payload = isRegister
-? { name: fullName, email, password, role }
-: { email, password };
-
-const result = await postJSON(endpoint, payload);
-
-// Save token if backend returns one
-if (result?.token) localStorage.setItem("ZS_TOKEN", result.token);
-if (result?.user) localStorage.setItem("ZS_USER", JSON.stringify(result.user));
-
-authMessage.textContent = "✅ Success!";
-setTimeout(() => closeAuthModal(), 600);
-} catch (err) {
-authMessage.textContent = `❌ ${err.message}`;
-}
+openModal();
 });
 
-// initialize hidden fields for Sign In mode
-setRegisterMode(false);
-}
+closeBtn?.addEventListener("click", closeModal);
 
-// ------------------------------
-// Auth modal open + role routing
-// ------------------------------
-const authModal = document.getElementById("authModal");
-const closeModalBtn = document.getElementById("closeModal");
-
-const senderLoginLink = document.getElementById("senderLoginLink");
-const courierLoginLink = document.getElementById("courierLoginLink");
-
-// (Optional) if you still keep the old Sign In button somewhere
-const signInBtn = document.getElementById("signInBtn");
-
-const authRole = document.getElementById("authRole");
-const authForm = document.getElementById("authForm");
-
-let selectedRole = "sender"; // default
-
-function openAuthModal(role) {
-selectedRole = role || "sender";
-
-// If you later want to show the dropdown during register,
-// we still keep the value synced:
-if (authRole) authRole.value = selectedRole;
-
-authModal?.classList.add("open");
-authModal?.setAttribute("aria-hidden", "false");
-}
-
-function closeAuthModal() {
-authModal?.classList.remove("open");
-authModal?.setAttribute("aria-hidden", "true");
-}
-
-senderLoginLink?.addEventListener("click", () => openAuthModal("sender"));
-courierLoginLink?.addEventListener("click", () => openAuthModal("courier"));
-
-// If you still have single Sign In button, it opens as sender by default
-signInBtn?.addEventListener("click", () => openAuthModal("sender"));
-
-closeModalBtn?.addEventListener("click", closeAuthModal);
-
-// close when clicking outside modal-content
-authModal?.addEventListener("click", (e) => {
-if (e.target === authModal) closeAuthModal();
+modal?.addEventListener("click", (e) => {
+if (e.target === modal) closeModal();
 });
 
-// ESC closes modal
 document.addEventListener("keydown", (e) => {
-if (e.key === "Escape") closeAuthModal();
+if (e.key === "Escape" && modal?.classList.contains("open")) closeModal();
 });
 
-// TEMP login behavior: redirect by role
-// Later we replace this with real backend auth (JWT)
+goRegisterLink?.addEventListener("click", (e) => {
+e.preventDefault();
+closeModal();
+document.getElementById("courier")?.scrollIntoView({ behavior: "smooth" });
+});
+
+// ✅ TEMP login (frontend only). Swap to real backend auth later.
 authForm?.addEventListener("submit", (e) => {
 e.preventDefault();
-
-// Example: you can read values if you want
-// const email = document.getElementById("authEmail")?.value.trim();
-// const pass = document.getElementById("authPassword")?.value;
-
-if (selectedRole === "courier") {
-window.location.href = "./courier-dashboard.html";
-} else {
+if (authMessage) {
+authMessage.style.color = "#3ddc97";
+authMessage.textContent = "✅ Signed in! Redirecting...";
+}
+setTimeout(() => {
 window.location.href = "./sender-dashboard.html";
-}
+}, 700);
 });
-
-// ✅ Live password match check (Register form)
-const passwordInput = document.getElementById("regPassword");
-const confirmInput = document.getElementById("regConfirmPassword");
-
-confirmInput?.addEventListener("input", () => {
-if (!passwordInput) return;
-
-if (confirmInput.value === passwordInput.value) {
-confirmInput.style.borderColor = "#3ddc97";
-} else {
-confirmInput.style.borderColor = "#ff6b6b";
-}
 });
