@@ -23,7 +23,6 @@
 <meta name="twitter:description" content="Fast, secure package delivery powered by verified travelers - ZigaSwift." />
 <meta name="twitter:image" content="https://ZigaSwift.example/og-image.png" />
 
-<!-- App / Theme -->
 <meta name="theme-color" content="#0b1220" />
 
 <!-- JSON-LD (Organization) -->
@@ -39,70 +38,6 @@
 </script>
 
 <link rel="stylesheet" href="styles.css" />
-
-<!-- Modal styles (kept here so it works even if you forget to paste in styles.css) -->
-<style>
-.modal{
-position:fixed;
-inset:0;
-background:rgba(0,0,0,.78);
-display:flex;
-align-items:center;
-justify-content:center;
-z-index:1000;
-opacity:0;
-pointer-events:none;
-transition:opacity .25s ease;
-}
-.modal.open{opacity:1;pointer-events:auto;}
-
-.modal-content{
-width:min(440px,92%);
-border-radius:18px;
-border:1px solid rgba(255,255,255,.10);
-background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-box-shadow:0 18px 40px rgba(0,0,0,.35);
-padding:26px 22px;
-position:relative;
-color:#eef3ff;
-}
-
-.modal-content h2{margin:0 0 12px;}
-
-.close-modal{
-position:absolute;
-top:10px;
-right:12px;
-width:42px;
-height:42px;
-border-radius:12px;
-border:1px solid rgba(255,255,255,.10);
-background:rgba(255,255,255,.04);
-color:#eef3ff;
-font-size:24px;
-cursor:pointer;
-}
-.close-modal:hover{transform:translateY(-1px);}
-
-.toggle-form{
-text-align:center;
-margin-top:14px;
-color:#9fb2d6;
-font-weight:650;
-}
-.toggle-form a{color:#6ea8ff;cursor:pointer;font-weight:800;}
-
-/* Only center the message inside modal (won’t affect waitlist/courier messages) */
-#authMessage.form-msg{margin-top:12px;text-align:center;min-height:20px;}
-#authMessage.success-msg{color:#3ddc97 !important;}
-
-/* Little pop animation */
-.modal.open .modal-content{animation:pop .18s ease-out;}
-@keyframes pop{
-from{transform:translateY(10px);opacity:.6}
-to{transform:translateY(0);opacity:1}
-}
-</style>
 </head>
 
 <body>
@@ -124,8 +59,8 @@ to{transform:translateY(0);opacity:1}
 <a href="#pricing">Pricing</a>
 <a href="#faq">FAQ</a>
 
-<!-- ✅ ONE LOGIN BUTTON (for all users) -->
-<button class="btn btn-sm btn-ghost" id="loginBtn" type="button">Login</button>
+<button class="btn btn-sm btn-ghost" id="senderLoginLink" type="button">Sender Login</button>
+<button class="btn btn-sm btn-ghost" id="courierLoginLink" type="button">Courier Login</button>
 
 <a class="btn btn-sm btn-ghost" href="#waitlist">Join waitlist</a>
 </div>
@@ -133,6 +68,7 @@ to{transform:translateY(0);opacity:1}
 </header>
 
 <main>
+<!-- HERO -->
 <section class="hero">
 <div class="container hero-grid">
 <div>
@@ -153,7 +89,7 @@ Built-in accountability: declarations, photos, signatures, and escrow-style payo
 
 <div class="cta">
 <a class="btn" href="#waitlist">Get Early Access</a>
-<a class="btn btn-ghost" href="#courier">Become a Courier</a>
+<a class="btn btn-ghost" href="#courier">Register (Sender/Courier)</a>
 </div>
 
 <div class="stats">
@@ -210,6 +146,7 @@ Built-in accountability: declarations, photos, signatures, and escrow-style payo
 </div>
 </section>
 
+<!-- STRIP -->
 <section class="strip">
 <div class="container strip-inner">
 <div class="strip-item">Built for: travelers • small businesses • urgent delivery</div>
@@ -218,6 +155,7 @@ Built-in accountability: declarations, photos, signatures, and escrow-style payo
 </div>
 </section>
 
+<!-- PROBLEM / SOLUTION -->
 <section class="section" id="problem">
 <div class="container two-col">
 <div>
@@ -247,6 +185,7 @@ destination—creating faster deliveries and new earning opportunities.
 </div>
 </section>
 
+<!-- HOW IT WORKS -->
 <section class="section alt" id="how">
 <div class="container">
 <div class="section-head">
@@ -285,6 +224,7 @@ This increases capacity, boosts earnings, and strengthens customer trust.
 </div>
 </section>
 
+<!-- SAFETY -->
 <section class="section" id="safety">
 <div class="container">
 <div class="section-head">
@@ -322,6 +262,7 @@ This increases capacity, boosts earnings, and strengthens customer trust.
 </div>
 </section>
 
+<!-- EARN -->
 <section class="section alt" id="earn">
 <div class="container two-col">
 <div>
@@ -334,7 +275,7 @@ Turn unused luggage space into income. Couriers can earn <b>$40–$60+</b> per t
 <li>Choose trips you’re already taking</li>
 <li>Unlock higher tiers with great service</li>
 </ul>
-<a class="btn" href="#courier">Apply as a courier</a>
+<a class="btn" href="#courier">Register now</a>
 </div>
 <div class="earn-card">
 <div class="earn-row">
@@ -356,6 +297,7 @@ Tier upgrades based on delivery count, rating, and reviews.
 </div>
 </section>
 
+<!-- PRICING -->
 <section class="section" id="pricing">
 <div class="container">
 <div class="section-head">
@@ -400,6 +342,7 @@ Tier upgrades based on delivery count, rating, and reviews.
 </div>
 </section>
 
+<!-- WAITLIST -->
 <section class="section alt" id="waitlist">
 <div class="container two-col">
 <div>
@@ -436,48 +379,56 @@ City / Airport hub
 </div>
 </section>
 
+<!-- REGISTER (ONE ACCOUNT) -->
 <section class="section" id="courier">
 <div class="container two-col">
 <div>
-<h2>Become a courier</h2>
+<h2>Create your ZigaSwift account</h2>
 <p>
-If you travel often, you can earn while you fly. Apply to join our verified courier network and unlock higher tiers with great service.
+Register once and use the <b>same email + password</b> to sign in as a <b>Sender</b> or a <b>Courier</b>.
+That means you can send packages anytime—and if you’re traveling, you can also carry packages and earn.
 </p>
 <ul class="checklist">
-<li>Verified identity</li>
-<li>Choose your routes</li>
-<li>Earn per delivery</li>
+<li>One account for Sender + Courier</li>
+<li>Switch dashboards anytime</li>
+<li>Secure sign-in with password</li>
 </ul>
-
 <div class="note">
-<b>Tip:</b> Create one ZigaSwift account (Login → Register). You can use the same email + password to access your dashboard.
+<b>Tip:</b> Your “Typical route” helps us match deliveries when you choose to work as a courier.
+You can still use your account to send packages even if you don’t travel.
 </div>
 </div>
 
 <div class="form-card">
-<form id="courierForm" novalidate>
+<form id="registerForm" novalidate>
 <label>
 Full name
-<input type="text" name="name" placeholder="Alex Johnson" required />
+<input type="text" id="regName" placeholder="Alex Johnson" required />
 </label>
 
 <label>
 Email
-<input type="email" name="email" placeholder="alex@email.com" required />
+<input type="email" id="regEmail" placeholder="alex@email.com" required />
 </label>
 
 <label>
-Typical route
-<input type="text" name="route" placeholder="Chicago → New York" required />
+Password
+<input type="password" id="regPassword" placeholder="At least 6 characters" minlength="6" required />
 </label>
 
-<button class="btn" type="submit">Apply</button>
-<p class="form-msg" id="courierMsg" aria-live="polite"></p>
+<label>
+Typical route (optional but recommended)
+<input type="text" id="regRoute" placeholder="Chicago → New York" />
+</label>
+
+<button class="btn" type="submit">Create Account</button>
+<p class="form-msg" id="registerMsg" aria-live="polite"></p>
 </form>
 </div>
 </div>
 </section>
 
+<!-- FAQ -->
 <section class="section alt" id="faq">
 <div class="container">
 <div class="section-head">
@@ -506,6 +457,7 @@ Typical route
 </div>
 </section>
 
+<!-- FOOTER -->
 <footer class="footer">
 <div class="container footer-inner">
 <div>
@@ -524,9 +476,8 @@ Typical route
 </div>
 </div>
 </footer>
-</main>
 
-<!-- ✅ SIGN IN / REGISTER MODAL (outside your sections so it never “replaces” them) -->
+<!-- SIGN IN MODAL -->
 <div id="authModal" class="modal" aria-hidden="true">
 <div class="modal-content">
 <button class="close-modal" id="closeModal" aria-label="Close">×</button>
@@ -534,211 +485,169 @@ Typical route
 <h2 id="modalTitle">Sign In</h2>
 
 <form id="authForm" novalidate>
-<label for="authName" id="nameLabel" style="display:none;">Full Name</label>
-<input type="text" id="authName" placeholder="Jane Doe" style="display:none;" />
-
 <label for="authEmail">Email</label>
 <input type="email" id="authEmail" placeholder="your@email.com" required />
 
 <label for="authPassword">Password</label>
-<input type="password" id="authPassword" placeholder="At least 6 characters" minlength="6" required />
-
-<label for="authConfirmPassword" id="confirmLabel" style="display:none;">Confirm Password</label>
-<input type="password" id="authConfirmPassword" placeholder="Re-enter your password" minlength="6" style="display:none;" />
-
-<label for="authRole" id="roleLabel" style="display:none;">I want to</label>
-<select id="authRole" style="display:none;">
-<option value="sender">Send packages</option>
-<option value="courier">Carry packages</option>
-</select>
+<input type="password" id="authPassword" placeholder="Your password" required />
 
 <button type="submit" class="btn" id="authSubmit">Sign In</button>
 <p class="form-msg" id="authMessage" aria-live="polite"></p>
 </form>
-
-<p class="toggle-form">
-<span id="toggleText">Don’t have an account?</span>
-<a href="#" id="toggleRegister">Register now</a>
-</p>
 </div>
 </div>
+</main>
 
-<!-- Your existing landing scripts (waitlist + courier forms) -->
-<script src="script.js"></script>
-
-<!-- ✅ Auth modal logic (kept separate so it doesn’t mess with your script.js) -->
 <script>
-const backendUrl = "https://zigaswift-backend-1.onrender.com";
+/* =========================================
+NAV + YEAR
+========================================= */
+const navToggle = document.getElementById("navToggle");
+const navLinks = document.getElementById("navLinks");
 
-const authModal = document.getElementById("authModal");
+navToggle?.addEventListener("click", () => {
+const isOpen = navLinks.classList.toggle("open");
+navToggle.setAttribute("aria-expanded", String(isOpen));
+});
+
+navLinks?.querySelectorAll("a").forEach((a) => {
+a.addEventListener("click", () => {
+navLinks.classList.remove("open");
+navToggle.setAttribute("aria-expanded", "false");
+});
+});
+
+const yearEl = document.getElementById("year");
+if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+/* =========================================
+ONE ACCOUNT (DEMO STORAGE)
+========================================= */
+const STORAGE_KEY = "ziga_account";
+
+const registerForm = document.getElementById("registerForm");
+const registerMsg = document.getElementById("registerMsg");
+const passwordInput = document.getElementById("regPassword");
+const confirmInput = document.getElementById("regConfirmPassword");
+
+registerForm?.addEventListener("submit", (e) => {
+e.preventDefault();
+
+const name = document.getElementById("regName").value.trim();
+const email = document.getElementById("regEmail").value.trim().toLowerCase();
+const password = passwordInput.value;
+const confirmPassword = confirmInput.value;
+const route = document.getElementById("regRoute").value.trim();
+
+registerMsg.textContent = "";
+
+// Reset border styles
+confirmInput.style.borderColor = "";
+passwordInput.style.borderColor = "";
+
+if (!name || !email || !email.includes("@")) {
+registerMsg.textContent = "Please enter a valid name and email.";
+registerMsg.style.color = "#ff6b6b";
+return;
+}
+
+if (!password || password.length < 6) {
+registerMsg.textContent = "Password must be at least 6 characters.";
+registerMsg.style.color = "#ff6b6b";
+passwordInput.style.borderColor = "#ff6b6b";
+return;
+}
+
+if (password !== confirmPassword) {
+registerMsg.textContent = "Passwords do not match.";
+registerMsg.style.color = "#ff6b6b";
+confirmInput.style.borderColor = "#ff6b6b";
+return;
+}
+
+const account = { name, email, password, route, createdAt: new Date().toISOString() };
+localStorage.setItem(STORAGE_KEY, JSON.stringify(account));
+
+registerMsg.innerHTML =
+`✅ Account created successfully!<br>
+You can now sign in as <b>Sender</b> or <b>Courier</b>.`;
+registerMsg.style.color = "#3ddc97";
+
+registerForm.reset();
+});
+
+/* =========================================
+LOGIN MODAL
+========================================= */
+const modal = document.getElementById("authModal");
 const closeModal = document.getElementById("closeModal");
-const loginBtn = document.getElementById("loginBtn");
-
 const authForm = document.getElementById("authForm");
 const modalTitle = document.getElementById("modalTitle");
-const authSubmit = document.getElementById("authSubmit");
-
-const toggleRegister = document.getElementById("toggleRegister");
-const toggleText = document.getElementById("toggleText");
-
-const authName = document.getElementById("authName");
-const nameLabel = document.getElementById("nameLabel");
-
-const authEmail = document.getElementById("authEmail");
-const authPassword = document.getElementById("authPassword");
-
-const authConfirmPassword = document.getElementById("authConfirmPassword");
-const confirmLabel = document.getElementById("confirmLabel");
-
-const authRole = document.getElementById("authRole");
-const roleLabel = document.getElementById("roleLabel");
-
 const authMessage = document.getElementById("authMessage");
 
-let isRegister = false;
+let loginTarget = "sender";
 
-function show(el, yes){ el.style.display = yes ? "block" : "none"; }
-
-function openModal(register=false){
-isRegister = register;
-
-modalTitle.textContent = register ? "Create Account" : "Sign In";
-authSubmit.textContent = register ? "Register" : "Sign In";
-
-toggleText.textContent = register ? "Already have an account?" : "Don’t have an account?";
-toggleRegister.textContent = register ? "Sign in" : "Register now";
-
-show(nameLabel, register);
-show(authName, register);
-
-show(confirmLabel, register);
-show(authConfirmPassword, register);
-
-show(roleLabel, register);
-show(authRole, register);
-
-authMessage.classList.remove("success-msg");
+function openLoginModal(title, target) {
+loginTarget = target;
+modalTitle.textContent = title;
 authMessage.textContent = "";
-
-authModal.classList.add("open");
-authModal.setAttribute("aria-hidden","false");
+modal.classList.add("open");
+modal.style.display = "flex";
+modal.setAttribute("aria-hidden", "false");
 }
 
-function closeAuthModal(){
-authModal.classList.remove("open");
-authModal.setAttribute("aria-hidden","true");
+function closeLoginModal() {
+modal.classList.remove("open");
+modal.style.display = "none";
+modal.setAttribute("aria-hidden", "true");
 }
 
-loginBtn.addEventListener("click", (e) => {
+document.getElementById("senderLoginLink")?.addEventListener("click", () => {
+openLoginModal("Sender Sign In", "sender");
+});
+
+document.getElementById("courierLoginLink")?.addEventListener("click", () => {
+openLoginModal("Courier Sign In", "courier");
+});
+
+closeModal?.addEventListener("click", closeLoginModal);
+
+modal?.addEventListener("click", (e) => {
+if (e.target === modal) closeLoginModal();
+});
+
+authForm?.addEventListener("submit", (e) => {
 e.preventDefault();
-openModal(false);
-});
 
-closeModal.addEventListener("click", closeAuthModal);
+const email = document.getElementById("authEmail").value.trim().toLowerCase();
+const password = document.getElementById("authPassword").value;
 
-toggleRegister.addEventListener("click", (e) => {
-e.preventDefault();
-openModal(!isRegister);
-});
+const saved = localStorage.getItem(STORAGE_KEY);
+const account = saved ? JSON.parse(saved) : null;
 
-authModal.addEventListener("click", (e) => {
-if (e.target === authModal) closeAuthModal();
-});
-
-// Live confirm password check (only while registering)
-authConfirmPassword.addEventListener("input", () => {
-if (!isRegister) return;
-if (authConfirmPassword.value && authPassword.value === authConfirmPassword.value) {
-authConfirmPassword.style.borderColor = "#3ddc97";
-} else {
-authConfirmPassword.style.borderColor = "#ff6b6b";
-}
-});
-
-authForm.addEventListener("submit", async (e) => {
-e.preventDefault();
-authSubmit.disabled = true;
-authMessage.classList.remove("success-msg");
-authMessage.textContent = "";
-
-const email = authEmail.value.trim().toLowerCase();
-const password = authPassword.value;
-
-if (!email || !email.includes("@")) {
-authMessage.textContent = "Please enter a valid email.";
-authSubmit.disabled = false;
-return;
-}
-if (!password || password.length < 6) {
-authMessage.textContent = "Password must be at least 6 characters.";
-authSubmit.disabled = false;
+if (!account) {
+authMessage.style.color = "#ff6b6b";
+authMessage.textContent = "No account found. Please register first.";
 return;
 }
 
-const payload = { email, password };
-
-if (isRegister) {
-const name = authName.value.trim();
-const confirm = authConfirmPassword.value;
-
-if (!name) {
-authMessage.textContent = "Please enter your full name.";
-authSubmit.disabled = false;
-return;
-}
-if (password !== confirm) {
-authMessage.textContent = "Passwords do not match.";
-authSubmit.disabled = false;
+if (account.email !== email || account.password !== password) {
+authMessage.style.color = "#ff6b6b";
+authMessage.textContent = "Invalid email or password. Try again.";
 return;
 }
 
-payload.name = name;
-payload.role = authRole.value;
-}
-
-try {
-const endpoint = isRegister ? "/api/register" : "/api/login";
-
-const res = await fetch(backendUrl + endpoint, {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify(payload),
-});
-
-const data = await res.json().catch(() => ({}));
-
-if (!res.ok || !data.ok) {
-throw new Error(data.error || "Failed. Please try again.");
-}
-
-if (data.token) localStorage.setItem("jwtToken", data.token);
-
-const role = data.role || payload.role || localStorage.getItem("role") || "sender";
-localStorage.setItem("role", role);
-
-authMessage.classList.add("success-msg");
-authMessage.textContent = "✅ Success! Redirecting...";
+authMessage.style.color = "#3ddc97";
+authMessage.textContent = `✅ Welcome back, ${account.name}! Redirecting...`;
 
 setTimeout(() => {
-window.location.href = role === "courier" ? "courier-dashboard.html" : "sender-dashboard.html";
+if (loginTarget === "courier") {
+window.location.href = "./courier-dashboard.html";
+} else {
+window.location.href = "./sender-dashboard.html";
+}
 }, 900);
-
-} catch (err) {
-authMessage.textContent = err.message;
-} finally {
-authSubmit.disabled = false;
-}
 });
-
-// If already logged in, make button go to dashboard
-if (localStorage.getItem("jwtToken")) {
-loginBtn.textContent = "Dashboard";
-loginBtn.addEventListener("click", (e) => {
-e.preventDefault();
-const role = localStorage.getItem("role") || "sender";
-window.location.href = role === "courier" ? "courier-dashboard.html" : "sender-dashboard.html";
-});
-}
 </script>
 </body>
 </html>
