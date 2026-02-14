@@ -417,6 +417,11 @@ Password
 </label>
 
 <label>
+Confirm Password
+<input type="password" id="regConfirmPassword" placeholder="Re-enter your password" minlength="6" required />
+</label>
+
+<label>
 Typical route (optional but recommended)
 <input type="text" id="regRoute" placeholder="Chicago → New York" />
 </label>
@@ -527,23 +532,14 @@ const STORAGE_KEY = "ziga_account";
 
 const registerForm = document.getElementById("registerForm");
 const registerMsg = document.getElementById("registerMsg");
-const passwordInput = document.getElementById("regPassword");
-const confirmInput = document.getElementById("regConfirmPassword");
 
 registerForm?.addEventListener("submit", (e) => {
 e.preventDefault();
 
 const name = document.getElementById("regName").value.trim();
 const email = document.getElementById("regEmail").value.trim().toLowerCase();
-const password = passwordInput.value;
-const confirmPassword = confirmInput.value;
+const password = document.getElementById("regPassword").value;
 const route = document.getElementById("regRoute").value.trim();
-
-registerMsg.textContent = "";
-
-// Reset border styles
-confirmInput.style.borderColor = "";
-passwordInput.style.borderColor = "";
 
 if (!name || !email || !email.includes("@")) {
 registerMsg.textContent = "Please enter a valid name and email.";
@@ -554,14 +550,6 @@ return;
 if (!password || password.length < 6) {
 registerMsg.textContent = "Password must be at least 6 characters.";
 registerMsg.style.color = "#ff6b6b";
-passwordInput.style.borderColor = "#ff6b6b";
-return;
-}
-
-if (password !== confirmPassword) {
-registerMsg.textContent = "Passwords do not match.";
-registerMsg.style.color = "#ff6b6b";
-confirmInput.style.borderColor = "#ff6b6b";
 return;
 }
 
@@ -569,8 +557,8 @@ const account = { name, email, password, route, createdAt: new Date().toISOStrin
 localStorage.setItem(STORAGE_KEY, JSON.stringify(account));
 
 registerMsg.innerHTML =
-`✅ Account created successfully!<br>
-You can now sign in as <b>Sender</b> or <b>Courier</b>.`;
+`✅ Account created!<br>
+You can now sign in as <b>Sender</b> or <b>Courier</b> using the same login.`;
 registerMsg.style.color = "#3ddc97";
 
 registerForm.reset();
