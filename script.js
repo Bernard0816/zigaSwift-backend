@@ -122,7 +122,7 @@ Requires in HTML:
 - message p id="authMessage"
 - link id="goRegisterLink" href="#courier"
 ========================= */
-const loginBtn = document.getElementById("LoginLink");
+const loginBtn = document.getElementById("signInBtn");
 const modal = document.getElementById("authModal");
 const closeBtn = document.getElementById("closeModal");
 const authForm = document.getElementById("authForm");
@@ -164,7 +164,14 @@ if (e.key === "Escape" && modal?.classList.contains("open")) closeModal();
 goRegisterLink?.addEventListener("click", (e) => {
 e.preventDefault();
 closeModal();
-document.getElementById("courier")?.scrollIntoView({ behavior: "smooth" });
+
+// Small delay so modal closes nicely first
+setTimeout(() => {
+document.getElementById("courier")?.scrollIntoView({
+behavior: "smooth",
+block: "start"
+});
+}, 300);
 });
 
 // ✅ TEMP login (frontend only). Swap to real backend auth later.
