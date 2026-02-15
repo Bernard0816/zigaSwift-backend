@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ZigaSwift Dashboard — Verified Access</title>
+
+<style>
+:root {
+--bg:#0b1220;
+--card:#121a2c;
+--text:#e7eefc;
+--muted:#9ab0d6;
+--accent:#2b76ff;
+--success:#3ddc97;
+--danger:#ff6b6b;
+--border:#22304f;
+}
+
+*{box-sizing:border-box}
+body{
+background:var(--bg);
+color:var(--text);
+font-family:system-ui,-apple-system,sans-serif;
+margin:0;
+padding:20px;
+line-height:1.6;
+}
+
+.container{max-width:1100px;margin:0 auto}
+
+/* Header */
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:14px;
+margin-bottom:18px;
+}
+.brand{
+display:flex;align-items:center;gap:10px;
+font-weight:900;letter-spacing:.2px;
+}
+.brand-badge{
+width:34px;height:34px;border-radius:10px;
+display:grid;place-items:center;
+background:linear-gradient(135deg, rgba(43,118,255,.95), rgba(61,220,151,.90));
+color:#081021;font-weight:900;
+box-shadow:0 12px 28px rgba(43,118,255,.18);
+}
+h1{margin:0;font-size:1.35rem}
+.sub{margin:4px 0 0;color:var(--muted);font-size:.95rem}
+
+/* Buttons */
+.btn{
+padding:12px 18px;
+background:var(--accent);
+color:#fff;border:0;border-radius:10px;
+cursor:pointer;font-weight:800;
+transition:transform .15s, background .2s;
+white-space:nowrap;
+}
+.btn:hover{background:#1f5ed8;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-ghost{
+background:rgba(255,255,255,.06);
+border:1px solid var(--border);
+color:var(--text);
+}
+.btn-ghost:hover{background:rgba(255,255,255,.09)}
+.btn-sm{padding:10px 14px;border-radius:999px}
+.btn-green{background:var(--success);color:#06151f}
+.btn-green:hover{background:#2eb57f}
+.btn-danger{background:var(--danger)}
+.btn-danger:hover{background:#ff5252}
+.btn:disabled{
+opacity:.55;
+cursor:not-allowed;
+transform:none;
+}
+
+/* Tabs */
+.tabs{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin:0 0 16px;
+}
+.tab{
+padding:10px 14px;
+border-radius:999px;
+border:1px solid var(--border);
+background:rgba(255,255,255,.04);
+color:var(--muted);
+cursor:pointer;
+font-weight:900;
+}
+.tab.active{
+background:linear-gradient(135deg, rgba(43,118,255,.35), rgba(61,220,151,.22));
+color:var(--text);
+border-color:rgba(43,118,255,.45);
+}
+
+/* Sections / cards */
+.section{
+background:var(--card);
+border:1px solid var(--border);
+border-radius:14px;
+padding:22px;
+margin-bottom:18px;
+}
+.section h2{
+margin:0 0 14px;
+font-size:1.35rem;
+color:var(--success);
+}
+.hidden{display:none!important}
+
+/* Helper / Gate */
+.helper{
+margin:0 0 16px;
+padding:14px 16px;
+border-radius:14px;
+border:1px solid rgba(43,118,255,.30);
+background:rgba(43,118,255,.10);
+color:var(--muted);
+}
+.helper b{color:var(--text)}
+.locked-banner{
+margin:0 0 16px;
+padding:14px 16px;
+border-radius:14px;
+border:1px solid rgba(255,107,107,.35);
+background:rgba(255,107,107,.10);
+color:var(--muted);
+}
+.locked-banner b{color:var(--text)}
+
+/* Verification UI */
+.verify-list{
+border:1px solid var(--border);
+border-radius:14px;
+overflow:hidden;
+}
+.verify-item{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:14px;
+padding:16px 16px;
+background:rgba(255,255,255,.02);
+border-bottom:1px solid var(--border);
+}
+.verify-item:last-child{border-bottom:0}
+.verify-left{
+display:flex;
+flex-direction:column;
+gap:4px;
+}
+.verify-title{
+font-size:1.25rem;
+font-weight:950;
+margin:0;
+color:var(--text);
+}
+.verify-status{
+font-size:1.05rem;
+font-weight:900;
+}
+.status-pending{color:var(--danger)}
+.status-complete{color:var(--success)}
+.verify-actions{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+justify-content:flex-end;
+}
+.pill{
+display:inline-flex;
+align-items:center;
+gap:8px;
+padding:8px 12px;
+border-radius:999px;
+border:1px solid var(--border);
+background:rgba(255,255,255,.03);
+color:var(--muted);
+font-weight:800;
+}
+.pill .dot{
+width:10px;height:10px;border-radius:50%;
+background:var(--danger);
+}
+.pill.ok .dot{background:var(--success)}
+.small{color:var(--muted);font-size:.92rem;margin-top:10px}
+
+/* Sender form styles (kept from your sender page, simplified) */
+.request-form label{
+display:block;
+margin:16px 0 8px;
+color:var(--muted);
+font-weight:650;
+}
+.request-form input,
+.request-form select,
+.request-form textarea{
+width:100%;
+padding:12px;
+background:#0e1628;
+border:1px solid var(--border);
+border-radius:10px;
+color:var(--text);
+font-size:1rem;
+}
+.request-form textarea{resize:vertical;min-height:80px}
+.item-search-wrapper{position:relative}
+#itemOther{display:none;margin-top:12px}
+.photo-upload{
+display:grid;
+grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));
+gap:16px;
+margin-top:12px;
+}
+.photo-preview{
+position:relative;
+width:100%;
+padding-top:100%;
+background:#0e1628;
+border:2px dashed var(--border);
+border-radius:10px;
+overflow:hidden;
+}
+.photo-preview img{
+position:absolute;inset:0;
+width:100%;height:100%;
+object-fit:cover;
+}
+.photo-preview.empty{
+display:flex;align-items:center;justify-content:center;
+color:var(--muted);font-size:.9rem;text-align:center;padding:10px;
+}
+.photos-count{
+margin:8px 0 12px;
+color:var(--muted);
+font-size:.95rem;
+}
+.photos-count strong{color:var(--text)}
+.help-link{color:var(--accent);cursor:pointer;text-decoration:underline;font-size:.9rem}
+details{margin-top:16px;font-size:.95rem;color:var(--muted)}
+summary{color:var(--accent);font-weight:700;cursor:pointer}
+.restricted-content{
+margin-top:12px;
+padding:16px;
+background:rgba(35,48,79,0.4);
+border-radius:12px;
+border:1px solid var(--border);
+}
+.restricted-content strong{color:var(--text)}
+.matches-grid{display:grid;gap:16px}
+.match-card{
+background:#1a2742;
+padding:18px;
+border-radius:12px;
+border:1px solid var(--border);
+}
+.match-card h3{margin:0 0 10px;color:var(--success)}
+.match-card button{
+margin-top:10px;
+padding:10px 16px;
+background:var(--success);
+color:#fff;border:0;border-radius:10px;
+cursor:pointer;font-weight:900;
+}
+.match-card button:hover{background:#2eb57f}
+
+/* Courier styles (kept from your courier page) */
+.profile-header{
+display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap;
+}
+#profilePic{
+width:90px;height:90px;border-radius:50%;
+object-fit:cover;border:3px solid var(--accent);
+background:#0e1628;
+}
+.profile-form{
+display:grid;gap:14px;max-width:520px;
+}
+input[type="text"], input[type="number"], input[type="file"]{
+padding:12px;
+background:#0e1628;
+border:1px solid var(--border);
+border-radius:10px;
+color:var(--text);
+font-size:1rem;
+}
+.stats-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+gap:16px;
+}
+.stat-card{
+background:#1a2742;
+padding:18px;
+border-radius:12px;
+text-align:center;
+border:1px solid var(--border);
+}
+.stat-label{font-size:.95rem;color:var(--muted);margin-bottom:8px}
+.stat-value{font-size:1.9rem;font-weight:900;color:var(--accent)}
+.availability-control{
+display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.status-text{font-size:1.05rem;font-weight:900}
+.status-online{color:var(--success)}
+.status-offline{color:var(--danger)}
+.switch{position:relative;display:inline-block;width:74px;height:38px}
+.switch input{opacity:0;width:0;height:0}
+.slider{
+position:absolute;cursor:pointer;inset:0;
+background-color:#4a5568;transition:.25s;border-radius:38px;
+}
+.slider:before{
+position:absolute;content:"";
+height:30px;width:30px;left:4px;bottom:4px;
+background-color:white;transition:.25s;border-radius:50%;
+}
+input:checked + .slider{background-color:var(--accent)}
+input:checked + .slider:before{transform:translateX(36px)}
+.slider:after{
+position:absolute;top:50%;transform:translateY(-50%);
+font-size:.85rem;font-weight:950;color:white;
+}
+input:not(:checked) + .slider:after{left:42px;content:"OFF"}
+input:checked + .slider:after{left:12px;content:"ON"}
+
+.shipment-card{
+background:#1a2742;
+padding:18px;
+border-radius:12px;
+margin-bottom:14px;
+border:1px solid var(--border);
+}
+.shipment-card h3{margin:0 0 10px;color:var(--success);font-size:1.25rem}
+.shipment-info{
+display:grid;
+grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+gap:10px 16px;
+margin-bottom:12px;
+font-size:.95rem;
+color:var(--muted);
+}
+.shipment-info strong{color:var(--text)}
+.action-btn{
+padding:10px 16px;
+background:var(--success);
+color:#fff;border:0;border-radius:10px;
+cursor:pointer;font-weight:950;
+}
+.action-btn:hover{background:#2eb57f}
+.empty-state{
+text-align:center;
+color:var(--muted);
+padding:50px 0;
+font-size:1.05rem;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<header>
+<div>
+<div class="brand">
+<div class="brand-badge">✓</div>
+<div>
+<h1>ZigaSwift Dashboard</h1>
+<div class="sub" id="welcomeLine">Welcome back</div>
+</div>
+</div>
+</div>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+<button class="btn btn-ghost" id="goHome" type="button">Home</button>
+<button class="btn" id="logout" type="button">Logout</button>
+</div>
+</header>
+
+<div class="helper">
+<b>Security & Trust:</b> to protect users and prevent illegal use, ZigaSwift requires verification before anyone can send or carry packages.
+</div>
+
+<!-- VERIFICATION CENTER (GATE) -->
+<section class="section" id="verificationSection">
+<h2>Verification Center</h2>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+<span class="pill" id="overallPill"><span class="dot"></span> Verification Required</span>
+<button class="btn btn-sm btn-ghost" id="resetVerification" type="button">Reset (demo)</button>
+</div>
+
+<div class="verify-list" id="verifyList">
+<!-- filled by JS -->
+</div>
+
+<div class="small">
+<b>Note:</b> This is demo-mode UI. Next step is connecting each item to real services:
+ID verification + selfie match, background check, license validation, and signed terms.
+</div>
+</section>
+
+<!-- LOCKED BANNER -->
+<div class="locked-banner" id="lockedBanner">
+<b>Locked:</b> Complete all verification steps above to access <b>Send Packages</b> and <b>Carry Packages</b>.
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+<button class="tab active" id="tabSender" type="button">Send Packages</button>
+<button class="tab" id="tabCourier" type="button">Carry Packages</button>
+</div>
+
+<!-- =======================
+SENDER VIEW
+======================== -->
+<div id="senderView">
+<section class="section">
+<h2>Request New Delivery</h2>
+
+<form class="request-form" id="requestForm">
+<label>Pickup Location</label>
+<input type="text" id="pickup" placeholder="e.g. Houston, TX" required />
+
+<label>Dropoff Location</label>
+<input type="text" id="dropoff" placeholder="e.g. Austin, TX" required />
+
+<label>Weight (kg) Max 8 (kg)</label>
+<input type="number" id="weight" step="0.1" min="0.1" max="20" placeholder="e.g. 2.5" required />
+
+<label>Item Category (search or select)</label>
+<div class="item-search-wrapper">
+<input list="itemOptions" id="itemSelect" placeholder="e.g. Clothing, Cellphone..." required />
+<datalist id="itemOptions">
+<option value="Clothing"></option>
+<option value="Jewelry"></option>
+<option value="Cellphone"></option>
+<option value="Documents / Papers"></option>
+<option value="Accessories (bags, wallets, belts)"></option>
+<option value="Books / Magazines"></option>
+<option value="Cosmetics / Makeup"></option>
+<option value="Small Electronics (chargers, earbuds)"></option>
+<option value="Shoes"></option>
+<option value="Watches"></option>
+<option value="Small Gifts / Souvenirs"></option>
+<option value="Medication (personal use, non-prescription)"></option>
+<option value="Other item (specify below)"></option>
+</datalist>
+</div>
+
+<div id="itemOther">
+<label>Specific / Other Item Description</label>
+<input type="text" id="itemOtherInput" placeholder="e.g. Vintage silver necklace, brand new phone case..." />
+</div>
+
+<label>Additional Contents Description</label>
+<textarea id="contents" rows="3" placeholder="Extra details (color, condition, special handling needs...)"></textarea>
+
+<label>Declared Value ($)</label>
+<input type="number" id="value" step="0.01" min="0" placeholder="e.g. 150" required />
+
+<label>Priority</label>
+<select id="priority">
+<option value="standard">Standard</option>
+<option value="express">Express</option>
+<option value="rush">Rush</option>
+</select>
+
+<label>Upload Photos of the Item (4–6 recommended)</label>
+<input type="file" id="photos" accept="image/*" multiple />
+<div class="photos-count">Uploaded: <strong id="photoCount">0</strong>/6 photos</div>
+<div class="photo-upload" id="photoPreviews">
+<div class="photo-preview empty">No photos selected yet</div>
+</div>
+
+<small style="color: var(--muted); display: block; margin: 16px 0 8px;">
+Shipments are limited to small, legally permitted items within the approved maximum weight capacity.
+<span class="help-link" id="toggleRestricted">View full allowed & restricted list →</span>
+</small>
+
+<details id="restrictedItems">
+<summary>What can / can't I send?</summary>
+<div class="restricted-content">
+<strong>Commonly accepted items:</strong><br>
+• Clothing & shoes<br>
+• Jewelry & watches<br>
+• Cell phones & small electronics<br>
+• Documents, books, paperwork<br>
+• Cosmetics (non-aerosol, small quantities)<br>
+• Accessories, small gifts<br>
+• Hair extensions, Hair tools (without battery)<br><br>
+
+<strong>Package limits:</strong><br>
+• Maximum weight: <b>8 kg</b><br><br>
+
+<strong>Not allowed (safety & airline rules):</strong><br>
+• Liquids / gels &gt; 100 ml<br>
+• Perishable food or plants and animals<br>
+• Weapons, ammunition, explosives<br>
+• Hazardous materials (batteries &gt;100Wh without approval, chemicals)<br>
+• Illegal substances or counterfeit goods, drugs or controlled substances<br>
+• Large/heavy items (&gt;8 kg or oversized)<br><br>
+If your item is not listed, choose “Other item” and describe it clearly.<br>
+All requests are reviewed for compliance.
+</div>
+</details>
+
+<button type="submit" class="btn" id="senderSubmitBtn" style="margin-top: 28px; width: 100%; padding: 14px; font-size: 1.05rem;">
+Submit Request & Find Matches
+</button>
+</form>
+</section>
+
+<section class="section">
+<h2>Available Couriers</h2>
+<div class="matches-grid" id="matchesList">
+<p>No matches yet. Submit a request above to find verified couriers.</p>
+</div>
+</section>
+</div>
+
+<!-- =======================
+COURIER VIEW
+======================== -->
+<div id="courierView" class="hidden">
+<section class="section">
+<h2>Your Profile</h2>
+<div class="profile-header">
+<img id="profilePic" src="https://via.placeholder.com/90?text=You" alt="Your Profile Picture">
+<div>
+<h3 id="courierName">Your Name</h3>
+<p id="courierEmail" style="margin:6px 0 0; color:var(--muted);">your.email@example.com</p>
+</div>
+</div>
+
+<div class="profile-form">
+<label>
+Update Name:
+<input type="text" id="nameInput" placeholder="Your full name">
+</label>
+<label>
+Update Profile Picture:
+<input type="file" id="picInput" accept="image/*">
+</label>
+<button class="btn" id="saveProfile" type="button">Save Profile Changes</button>
+</div>
+</section>
+
+<section class="section">
+<h2>Your Stats & Availability</h2>
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-label">Current Tier</div>
+<div class="stat-value" id="tier">Bronze</div>
+</div>
+
+<div class="stat-card" style="grid-column: span 2; text-align:center;">
+<div class="stat-label">Go Online to Accept Deliveries</div>
+<div class="availability-control">
+<label class="switch">
+<input type="checkbox" id="availabilityToggle">
+<span class="slider" data-status="OFF"></span>
+</label>
+<div id="statusMessage" class="status-text status-offline">You are currently Offline</div>
+</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Available Capacity</div>
+<div style="display:flex; align-items:center; gap:12px; justify-content:center;">
+<input type="number" id="capacityInput" min="0" step="0.1" style="width:90px; text-align:center; font-size:1.4rem; color:var(--accent);">
+<span style="font-size:1.4rem; color:var(--accent);">kg</span>
+</div>
+<button class="btn" id="saveCapacity" type="button" style="margin-top:12px; font-size:0.9rem; padding:8px 16px;">Update Capacity</button>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Deliveries Completed</div>
+<div class="stat-value" id="deliveries">0</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Rating</div>
+<div class="stat-value" id="rating">N/A</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2>Available Shipments</h2>
+<div id="shipmentsList" class="empty-state">Loading available shipments...</div>
+</section>
+</div>
+</div>
+
+<script>
+/* ======================================================
+DEMO VERIFICATION STATE (localStorage)
+Later: replace with backend + JWT-protected endpoints.
+====================================================== */
+const VERIFY_KEY = 'ziga_verification';
+
+const DEFAULT_VERIFY = {
+backgroundCheck: false,
+driversLicense: false,
+profilePicture: false,
+terms: false
+};
+
+function getVerifyState(){
+try {
+const raw = localStorage.getItem(VERIFY_KEY);
+return raw ? { ...DEFAULT_VERIFY, ...JSON.parse(raw) } : { ...DEFAULT_VERIFY };
+} catch {
+return { ...DEFAULT_VERIFY };
+}
+}
+function setVerifyState(next){
+localStorage.setItem(VERIFY_KEY, JSON.stringify(next));
+}
+function isFullyVerified(state){
+return !!(state.backgroundCheck && state.driversLicense && state.profilePicture && state.terms);
+}
+
+/* ======================================================
+Header welcome line
+====================================================== */
+const welcomeLine = document.getElementById('welcomeLine');
+const savedNameAny =
+localStorage.getItem('courierName') ||
+localStorage.getItem('senderName') ||
+localStorage.getItem('userName') ||
+'Welcome back';
+welcomeLine.textContent = (savedNameAny && savedNameAny !== 'Welcome back') ? `Welcome, ${savedNameAny}` : 'Welcome back';
+
+/* ======================================================
+NAV BUTTONS
+====================================================== */
+document.getElementById('logout').addEventListener('click', () => {
+localStorage.removeItem('jwtToken');
+window.location.href = '/';
+});
+document.getElementById('goHome').addEventListener('click', () => {
+window.location.href = '/';
+});
+
+/* ======================================================
+TABS (Sender/Courier) + LOCKING
+====================================================== */
+const tabSender = document.getElementById('tabSender');
+const tabCourier = document.getElementById('tabCourier');
+const senderView = document.getElementById('senderView');
+const courierView = document.getElementById('courierView');
+const lockedBanner = document.getElementById('lockedBanner');
+const senderSubmitBtn = document.getElementById('senderSubmitBtn');
+
+function setTab(which){
+const sender = which === 'sender';
+tabSender.classList.toggle('active', sender);
+tabCourier.classList.toggle('active', !sender);
+senderView.classList.toggle('hidden', !sender);
+courierView.classList.toggle('hidden', sender);
+localStorage.setItem('dashboardTab', which);
+}
+
+tabSender.addEventListener('click', () => setTab('sender'));
+tabCourier.addEventListener('click', () => setTab('courier'));
+
+function applyLockUI() {
+const verify = getVerifyState();
+const ok = isFullyVerified(verify);
+
+lockedBanner.style.display = ok ? 'none' : 'block';
+
+// Disable interactive actions if not verified
+senderSubmitBtn.disabled = !ok;
+
+// If user not verified, prevent courier online toggle from being used
+const availabilityToggle = document.getElementById('availabilityToggle');
+availabilityToggle.disabled = !ok;
+if (!ok) {
+availabilityToggle.checked = false;
+localStorage.setItem('courierOnline', 'false');
+}
+
+// Also visually dim the tabs if locked (still viewable but actions are disabled)
+tabSender.style.opacity = ok ? '1' : '.85';
+tabCourier.style.opacity = ok ? '1' : '.85';
+}
+
+const lastTab = localStorage.getItem('dashboardTab') || 'sender';
+setTab(lastTab);
+
+/* ======================================================
+VERIFICATION CENTER UI
+====================================================== */
+const verifyList = document.getElementById('verifyList');
+const overallPill = document.getElementById('overallPill');
+
+function renderVerification() {
+const v = getVerifyState();
+const ok = isFullyVerified(v);
+
+overallPill.classList.toggle('ok', ok);
+overallPill.innerHTML = ok
+? `<span class="dot"></span> Verification Completed`
+: `<span class="dot"></span> Verification Required`;
+
+const items = [
+{
+key: 'backgroundCheck',
+title: 'Background Check',
+desc: 'Confirm identity and run basic safety screening.',
+action: 'Start Check'
+},
+{
+key: 'driversLicense',
+title: "Driver's License",
+desc: 'Upload/verify government ID (required for carrying packages).',
+action: 'Verify License'
+},
+{
+key: 'profilePicture',
+title: 'Profile Picture',
+desc: 'Upload a clear photo for accountability.',
+action: 'Upload Photo'
+},
+{
+key: 'terms',
+title: 'Terms and Conditions',
+desc: 'Accept rules: legal items only, compliance, disputes and penalties.',
+action: 'Review & Accept'
+}
+];
+
+verifyList.innerHTML = items.map(item => {
+const done = !!v[item.key];
+return `
+<div class="verify-item">
+<div class="verify-left">
+<div class="verify-title">${item.title}</div>
+<div class="verify-status ${done ? 'status-complete' : 'status-pending'}">
+${done ? 'Completed' : 'Pending'}
+</div>
+<div class="small">${item.desc}</div>
+</div>
+<div class="verify-actions">
+${done
+? `<button class="btn btn-sm btn-ghost" type="button" data-act="view" data-key="${item.key}">View</button>`
+: `<button class="btn btn-sm btn-green" type="button" data-act="complete" data-key="${item.key}">${item.action}</button>`
+}
+</div>
+</div>
+`;
+}).join('');
+
+// bind buttons
+verifyList.querySelectorAll('button[data-act]').forEach(btn => {
+btn.addEventListener('click', () => {
+const act = btn.getAttribute('data-act');
+const key = btn.getAttribute('data-key');
+const cur = getVerifyState();
+
+if (act === 'complete') {
+// Demo completion:
+// In real app: open modal > upload ID/selfie > call backend > await verification result
+cur[key] = true;
+setVerifyState(cur);
+renderVerification();
+applyLockUI();
+renderShipments();
+} else if (act === 'view') {
+alert(`✅ ${key} is marked as Completed (demo).\n\nNext step: connect to backend + real verification services.`);
+}
+});
+});
+
+applyLockUI();
+}
+
+document.getElementById('resetVerification').addEventListener('click', () => {
+setVerifyState({ ...DEFAULT_VERIFY });
+renderVerification();
+renderShipments();
+});
+
+renderVerification();
+
+/* ======================================================
+SENDER: Other item toggle
+====================================================== */
+const itemSelect = document.getElementById('itemSelect');
+const otherWrapper = document.getElementById('itemOther');
+itemSelect.addEventListener('input', () => {
+if (itemSelect.value === 'Other item (specify below)') {
+otherWrapper.style.display = 'block';
+} else {
+otherWrapper.style.display = 'none';
+document.getElementById('itemOtherInput').value = '';
+}
+});
+
+/* ======================================================
+SENDER: restricted list toggle helper
+====================================================== */
+document.getElementById('toggleRestricted').addEventListener('click', () => {
+const d = document.getElementById('restrictedItems');
+d.open = !d.open;
+});
+
+/* ======================================================
+SENDER: Photo preview + count (max 6)
+====================================================== */
+const photoInput = document.getElementById('photos');
+const photoPreviews = document.getElementById('photoPreviews');
+const photoCountEl = document.getElementById('photoCount');
+
+photoInput.addEventListener('change', () => {
+photoPreviews.innerHTML = '';
+const files = Array.from(photoInput.files).slice(0, 6);
+photoCountEl.textContent = files.length;
+
+if (files.length === 0) {
+photoPreviews.innerHTML = '<div class="photo-preview empty">No photos selected yet</div>';
+return;
+}
+
+files.forEach(file => {
+const reader = new FileReader();
+reader.onload = e => {
+const div = document.createElement('div');
+div.className = 'photo-preview';
+div.innerHTML = `<img src="${e.target.result}" alt="Item preview">`;
+photoPreviews.appendChild(div);
+};
+reader.readAsDataURL(file);
+});
+});
+
+/* ======================================================
+SENDER: Form submit (demo)
+====================================================== */
+document.getElementById('requestForm').addEventListener('submit', (e) => {
+e.preventDefault();
+const v = getVerifyState();
+if (!isFullyVerified(v)) {
+alert('🔒 Verification required before sending packages.\nComplete all steps in the Verification Center.');
+return;
+}
+alert('✅ Request submitted! (Demo mode)\nConnect this to your backend later.');
+});
+
+/* ======================================================
+COURIER: Profile
+====================================================== */
+const profilePic = document.getElementById('profilePic');
+const courierNameEl = document.getElementById('courierName');
+const courierEmailEl = document.getElementById('courierEmail');
+const nameInput = document.getElementById('nameInput');
+const picInput = document.getElementById('picInput');
+const saveProfileBtn = document.getElementById('saveProfile');
+
+function loadProfile() {
+const savedName = localStorage.getItem('courierName') || localStorage.getItem('userName') || 'Your Name';
+const savedPic = localStorage.getItem('courierPic') || 'https://via.placeholder.com/90?text=You';
+const savedEmail = localStorage.getItem('userEmail') || 'your.email@example.com';
+
+courierNameEl.textContent = savedName;
+nameInput.value = savedName;
+profilePic.src = savedPic;
+courierEmailEl.textContent = savedEmail;
+
+// keep welcome line in sync
+if (savedName && savedName !== 'Your Name') {
+localStorage.setItem('userName', savedName);
+welcomeLine.textContent = `Welcome, ${savedName}`;
+}
+}
+loadProfile();
+
+saveProfileBtn.addEventListener('click', () => {
+const newName = nameInput.value.trim();
+if (newName) {
+localStorage.setItem('courierName', newName);
+localStorage.setItem('userName', newName);
+courierNameEl.textContent = newName;
+welcomeLine.textContent = `Welcome, ${newName}`;
+}
+
+if (picInput.files?.[0]) {
+const reader = new FileReader();
+reader.onload = e => {
+localStorage.setItem('courierPic', e.target.result);
+profilePic.src = e.target.result;
+
+// If user uploads a pic, auto-mark "profilePicture" verification as completed (demo)
+const v = getVerifyState();
+if (!v.profilePicture) {
+v.profilePicture = true;
+setVerifyState(v);
+renderVerification();
+}
+};
+reader.readAsDataURL(picInput.files[0]);
+}
+
+alert('Profile updated successfully!');
+});
+
+/* ======================================================
+COURIER: Capacity
+====================================================== */
+const capacityInput = document.getElementById('capacityInput');
+const saveCapacityBtn = document.getElementById('saveCapacity');
+
+function loadCapacity() {
+const saved = localStorage.getItem('courierCapacity') || '8';
+capacityInput.value = saved;
+}
+loadCapacity();
+
+saveCapacityBtn.addEventListener('click', () => {
+const newCapacity = parseFloat(capacityInput.value);
+if (Number.isFinite(newCapacity) && newCapacity >= 0) {
+localStorage.setItem('courierCapacity', String(newCapacity));
+alert(`Available capacity updated to ${newCapacity} kg`);
+} else {
+alert('Please enter a valid number (0 or higher)');
+}
+});
+
+/* ======================================================
+COURIER: Availability Toggle (locked if not verified)
+====================================================== */
+const toggle = document.getElementById('availabilityToggle');
+const statusMessage = document.getElementById('statusMessage');
+
+function updateStatus() {
+const v = getVerifyState();
+if (!isFullyVerified(v)) {
+toggle.checked = false;
+localStorage.setItem('courierOnline', 'false');
+statusMessage.textContent = "Verification required before going Online";
+statusMessage.className = "status-text status-offline";
+return;
+}
+
+const isOnline = toggle.checked;
+localStorage.setItem('courierOnline', String(isOnline));
+
+if (isOnline) {
+statusMessage.textContent = "You are currently Online – accepting deliveries";
+statusMessage.className = "status-text status-online";
+} else {
+statusMessage.textContent = "You are currently Offline";
+statusMessage.className = "status-text status-offline";
+}
+}
+
+function loadAvailability() {
+const saved = localStorage.getItem('courierOnline') === 'true';
+toggle.checked = saved;
+updateStatus();
+}
+toggle.addEventListener('change', () => {
+updateStatus();
+renderShipments();
+});
+loadAvailability();
+
+/* ======================================================
+COURIER: Sample shipments (demo) — only show when verified + online
+====================================================== */
+const shipments = [
+{
+title: "Small Electronics Package",
+dispatchDate: "2026-02-12",
+pickup: "Houston, TX 77002",
+dropoff: "Austin, TX 78701",
+weightNeeded: "2.4 kg",
+estimatedPay: "$48"
+},
+{
+title: "Important Documents",
+dispatchDate: "2026-02-13",
+pickup: "Dallas, TX 75201",
+dropoff: "San Antonio, TX 78205",
+weightNeeded: "0.9 kg",
+estimatedPay: "$36"
+}
+];
+
+function renderShipments() {
+const list = document.getElementById('shipmentsList');
+const v = getVerifyState();
+const verified = isFullyVerified(v);
+const isOnline = localStorage.getItem('courierOnline') === 'true';
+
+if (!verified) {
+list.innerHTML = '<div class="empty-state">🔒 Complete verification to view shipments.</div>';
+return;
+}
+if (!isOnline) {
+list.innerHTML = '<div class="empty-state">Go <b>Online</b> to see available shipments.</div>';
+return;
+}
+
+if (shipments.length === 0) {
+list.innerHTML = '<div class="empty-state">No matching shipments available yet.</div>';
+return;
+}
+
+list.innerHTML = '';
+shipments.forEach(s => {
+const card = document.createElement('div');
+card.className = 'shipment-card';
+card.innerHTML = `
+<h3>${s.title}</h3>
+<div class="shipment-info">
+<div><strong>Dispatch Date:</strong> ${s.dispatchDate}</div>
+<div><strong>Dispatch Location:</strong> ${s.pickup}</div>
+<div><strong>Dropoff Location:</strong> ${s.dropoff}</div>
+<div><strong>Weight Needed:</strong> ${s.weightNeeded}</div>
+</div>
+<button class="action-btn" type="button">Accept (${s.estimatedPay})</button>
+`;
+card.querySelector('button').addEventListener('click', () => {
+alert(`✅ Accepted: ${s.title} (Demo)\nNext: connect to backend + escrow flow.`);
+});
+list.appendChild(card);
+});
+}
+renderShipments();
+</script>
+</body>
+</html>
